@@ -3,15 +3,15 @@ import { Inter } from "next/font/google"; // Import Inter font
 import "./globals.css";
 
 // Configure Inter font
-const inter = Inter({ 
+const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
   display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Infrastructure Plan - plan.seddon.co.uk",
-  description: "Interactive infrastructure planning and management tool",
+  title: "Seddon IT Planner",
+  description: "Interactive infrastructure planning and management tool for Seddon IT",
 };
 
 export default function RootLayout({
