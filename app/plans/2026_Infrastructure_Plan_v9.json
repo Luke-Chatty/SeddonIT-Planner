@@ -1,0 +1,460 @@
+{
+    "id": "2026-infra-prog-v9-detailed",
+    "name": "2026 Infrastructure Programme (Detailed)",
+    "description": "Structured replacement and modernisation of the core infrastructure platform across storage, networking, compute, and VDI.",
+    "startDate": "2026-02-01T09:00:00.000Z",
+    "endDate": "2026-04-30T17:00:00.000Z",
+    "createdAt": "2026-01-28T00:00:00.000Z",
+    "updatedAt": "2026-01-28T00:00:00.000Z",
+    "milestones": [
+        {
+            "id": "m1",
+            "title": "Infrastructure Readiness (Insentra)",
+            "date": "2026-03-07T17:00:00.000Z",
+            "description": "Core stack live, Storage network live, Pure Array 1 live, 3 Hosts live."
+        },
+        {
+            "id": "m2",
+            "title": "Horizon Cutover",
+            "date": "2026-03-20T17:00:00.000Z",
+            "description": "vdi.seddon.co.uk set as primary."
+        }
+    ],
+    "tasks": [
+        {
+            "id": "ph1",
+            "title": "PHASE 1: LEGACY REMOVAL & CLEAN-UP",
+            "description": "Decommissioning of legacy storage (NAS, Tegile) and clean-up.",
+            "startDate": "2026-02-01T09:00:00.000Z",
+            "endDate": "2026-02-28T17:00:00.000Z",
+            "status": "in-progress",
+            "priority": "high",
+            "dependencies": [],
+            "order": 1,
+            "scopeOfWorks": "<p>Environment preparation for new core.</p>"
+        },
+        {
+            "id": "1.1",
+            "parentId": "ph1",
+            "title": "1.1 Archive and Backup Validation",
+            "description": "Ensure archive platform is ready before NAS removal.",
+            "startDate": "2026-02-01T09:00:00.000Z",
+            "endDate": "2026-02-07T17:00:00.000Z",
+            "status": "completed",
+            "priority": "high",
+            "dependencies": [],
+            "order": 1.1,
+            "scopeOfWorks": "<ul><li>Confirm archive storage platform is installed and connected to Hyper-V</li><li>Validate archive storage configuration</li><li>Validate backup jobs targeting archive storage</li><li>Validate SharePoint backups</li><li>Validate Wasabi offsite backups</li><li>Test sample restores from archive and Wasabi</li><li>Complete operational handover to Project Admins</li><li>Obtain formal sign-off that archive platform is production ready</li></ul><p><strong>Gate:</strong> Archive platform signed off</p>"
+        },
+        {
+            "id": "1.2",
+            "parentId": "ph1",
+            "title": "1.2 NAS Decommissioning",
+            "description": "Removal of all 4 NAS units.",
+            "startDate": "2026-02-08T09:00:00.000Z",
+            "endDate": "2026-02-14T17:00:00.000Z",
+            "status": "in-progress",
+            "priority": "medium",
+            "dependencies": [
+                "1.1"
+            ],
+            "order": 1.2,
+            "scopeOfWorks": "<ul><li>Confirm no active backups or workloads on NAS</li><li>Remove NAS repositories from Veeam</li><li>Disable NAS access credentials</li><li>Power down NAS units</li><li>Physically derack NAS unit 1</li><li>Physically derack NAS unit 2</li><li>Physically derack NAS unit 3</li><li>Physically derack NAS unit 4</li><li>Remove NAS network cabling</li><li>Remove NAS VLAN references from network</li></ul><p><strong>Gate:</strong> NAS fully removed</p>"
+        },
+        {
+            "id": "1.3",
+            "parentId": "ph1",
+            "title": "1.3 Tegile Storage Cleanup",
+            "description": "Removal of Tegile Volumes 6 and 16.",
+            "startDate": "2026-02-15T09:00:00.000Z",
+            "endDate": "2026-02-21T17:00:00.000Z",
+            "status": "not-started",
+            "priority": "medium",
+            "dependencies": [
+                "1.2"
+            ],
+            "order": 1.3,
+            "scopeOfWorks": "<ul><li>Identify all remaining VM copies on Tegile</li><li>Identify snapshots and orphaned data</li><li>Decide retain vs delete per dataset</li><li>Migrate retained data to Wasabi or alternative storage</li><li>Delete obsolete VM copies and snapshots</li><li>Remove Tegile datastores from Hyper-V</li><li>Remove Tegile iSCSI targets from Hyper-V hosts</li><li>Remove Tegile MPIO configuration</li><li>Power down Tegile Volume 6</li><li>Power down Tegile Volume 16</li><li>Physically derack Tegile Volume 6</li><li>Physically derack Tegile Volume 16</li><li>Remove Tegile storage VLANs</li></ul><p><strong>Gate:</strong> Tegile fully removed</p>"
+        },
+        {
+            "id": "1.4",
+            "parentId": "ph1",
+            "title": "1.4 Hyper-V and Network Clean-Up",
+            "description": "Baseline hygiene for Hyper-V.",
+            "startDate": "2026-02-22T09:00:00.000Z",
+            "endDate": "2026-02-28T17:00:00.000Z",
+            "status": "not-started",
+            "priority": "low",
+            "dependencies": [
+                "1.3"
+            ],
+            "order": 1.4,
+            "scopeOfWorks": "<ul><li>Remove legacy iSCSI VLANs</li><li>Remove orphaned vSwitches</li><li>Remove stale VM network adapters</li><li>Validate no legacy storage paths remain</li><li>Validate Hyper-V hosts in clean operational state</li></ul><p><strong>Gate:</strong> Clean baseline confirmed</p>"
+        },
+        {
+            "id": "ph2",
+            "title": "PHASE 2: CORE NETWORK STACK DEPLOYMENT",
+            "description": "New core install, VLANs, and coexistence setup.",
+            "startDate": "2026-02-10T09:00:00.000Z",
+            "endDate": "2026-02-28T17:00:00.000Z",
+            "status": "not-started",
+            "priority": "critical",
+            "dependencies": [],
+            "order": 2,
+            "scopeOfWorks": ""
+        },
+        {
+            "id": "2.1",
+            "parentId": "ph2",
+            "title": "2.1 Core Stack Installation",
+            "description": "Physical install and power up.",
+            "startDate": "2026-02-10T09:00:00.000Z",
+            "endDate": "2026-02-14T17:00:00.000Z",
+            "status": "not-started",
+            "priority": "critical",
+            "dependencies": [],
+            "order": 2.1,
+            "scopeOfWorks": "<ul><li>Rack new core switches in existing racks</li><li>Connect dual power feeds</li><li>Install optics and fibre</li><li>Configure out-of-band management</li><li>Keep new core isolated from existing core</li></ul><p><strong>Gate:</strong> Core hardware operational</p>"
+        },
+        {
+            "id": "2.2",
+            "parentId": "ph2",
+            "title": "2.2 Core VLAN Configuration",
+            "description": "Logical config.",
+            "startDate": "2026-02-15T09:00:00.000Z",
+            "endDate": "2026-02-18T17:00:00.000Z",
+            "status": "not-started",
+            "priority": "high",
+            "dependencies": [
+                "2.1"
+            ],
+            "order": 2.2,
+            "scopeOfWorks": "<ul><li>Create Management VLANs</li><li>Create Server VLANs</li><li>Create Storage VLANs</li><li>Create VDI VLANs</li><li>Create Cluster / Live Migration VLANs</li><li>Create new logical DMZ VLAN</li><li>Document VLAN IDs, subnets, gateways</li></ul><p><strong>Gate:</strong> VLAN configuration validated</p>"
+        },
+        {
+            "id": "2.3",
+            "parentId": "ph2",
+            "title": "2.3 Firewall Integration",
+            "description": "Palo Alto connectivity.",
+            "startDate": "2026-02-19T09:00:00.000Z",
+            "endDate": "2026-02-22T17:00:00.000Z",
+            "status": "not-started",
+            "priority": "high",
+            "dependencies": [
+                "2.2"
+            ],
+            "order": 2.3,
+            "scopeOfWorks": "<ul><li>Create uplinks from new core to Palo Alto</li><li>Configure trunking</li><li>Configure routing</li><li>Create firewall zones</li><li>Validate north–south connectivity</li><li>Confirm no L2 connectivity between old and new cores</li></ul><p><strong>Gate:</strong> Firewall connectivity validated</p>"
+        },
+        {
+            "id": "2.4",
+            "parentId": "ph2",
+            "title": "2.4 Storage Network Deployment",
+            "description": "Dedicated storage switching.",
+            "startDate": "2026-02-23T09:00:00.000Z",
+            "endDate": "2026-02-25T17:00:00.000Z",
+            "status": "not-started",
+            "priority": "high",
+            "dependencies": [
+                "2.2"
+            ],
+            "order": 2.4,
+            "scopeOfWorks": "<ul><li>Rack storage switches</li><li>Connect dual power feeds</li><li>Configure management</li><li>Configure storage VLANs</li><li>Validate storage switch interconnects</li></ul><p><strong>Gate:</strong> Storage network ready</p>"
+        },
+        {
+            "id": "2.5",
+            "parentId": "ph2",
+            "title": "2.5 Core Coexistence Configuration",
+            "description": "Routing setup for migration.",
+            "startDate": "2026-02-26T09:00:00.000Z",
+            "endDate": "2026-02-28T17:00:00.000Z",
+            "status": "not-started",
+            "priority": "critical",
+            "dependencies": [
+                "2.3"
+            ],
+            "order": 2.5,
+            "scopeOfWorks": "<ul><li>Document old core / new core coexistence design</li><li>Confirm initial routing via firewall only</li><li>Plan optional L3 transit link for migration phase</li><li>Document VLAN cutover approach</li><li>Confirm no L2 stretching between cores</li></ul><p><strong>Gate:</strong> Coexistence strategy agreed</p>"
+        },
+        {
+            "id": "ph3",
+            "title": "PHASE 3: PRIMARY STORAGE & COMPUTE intro",
+            "description": "Setup of Pure Storage and new Compute hosts.",
+            "startDate": "2026-02-01T09:00:00.000Z",
+            "endDate": "2026-03-07T17:00:00.000Z",
+            "status": "not-started",
+            "priority": "critical",
+            "dependencies": [
+                "ph2"
+            ],
+            "order": 3,
+            "scopeOfWorks": ""
+        },
+        {
+            "id": "3.1",
+            "parentId": "ph3",
+            "title": "3.1 Compute Pre-Staging (Bolton)",
+            "description": "Initial setup of 3 hosts.",
+            "startDate": "2026-02-01T09:00:00.000Z",
+            "endDate": "2026-02-07T17:00:00.000Z",
+            "status": "completed",
+            "priority": "medium",
+            "dependencies": [],
+            "order": 3.1,
+            "scopeOfWorks": "<ul><li>Rack three hosts at Bolton</li><li>Update firmware and BIOS</li><li>Install VMware</li><li>Apply baseline configuration</li><li>Validate host health</li></ul><p><strong>Gate:</strong> Hosts ready for DC</p>"
+        },
+        {
+            "id": "3.2",
+            "parentId": "ph3",
+            "title": "3.2 Compute Install (Data Centre)",
+            "description": "Relocation and connection.",
+            "startDate": "2026-02-28T09:00:00.000Z",
+            "endDate": "2026-03-02T17:00:00.000Z",
+            "status": "not-started",
+            "priority": "high",
+            "dependencies": [
+                "3.1",
+                "2.1"
+            ],
+            "order": 3.2,
+            "scopeOfWorks": "<ul><li>Transport hosts to DC</li><li>Rack hosts</li><li>Connect to new core</li><li>Connect to storage switches</li><li>Validate connectivity</li></ul><p><strong>Gate:</strong> Hosts live in DC</p>"
+        },
+        {
+            "id": "3.3",
+            "parentId": "ph3",
+            "title": "3.3 Pure Storage Array 1 Installation",
+            "description": "Initial storage setup.",
+            "startDate": "2026-03-01T09:00:00.000Z",
+            "endDate": "2026-03-04T17:00:00.000Z",
+            "status": "not-started",
+            "priority": "critical",
+            "dependencies": [
+                "2.4"
+            ],
+            "order": 3.3,
+            "scopeOfWorks": "<ul><li>Rack Pure Storage Array 1</li><li>Connect to storage switches</li><li>Configure iSCSI</li><li>Configure MPIO</li><li>Create initial datastores</li><li>Validate performance and failover</li></ul><p><strong>Gate:</strong> Storage ready</p>"
+        },
+        {
+            "id": "3.4",
+            "parentId": "ph3",
+            "title": "3.4 Attach Compute to Storage",
+            "description": "Link hosts to Pure.",
+            "startDate": "2026-03-05T09:00:00.000Z",
+            "endDate": "2026-03-07T17:00:00.000Z",
+            "status": "not-started",
+            "priority": "high",
+            "dependencies": [
+                "3.2",
+                "3.3"
+            ],
+            "order": 3.4,
+            "scopeOfWorks": "<ul><li>Present Pure datastores to hosts</li><li>Validate datastore access</li><li>Validate failover behaviour</li><li>Confirm readiness for Horizon</li></ul><p><strong>Gate:</strong> Compute + storage validated</p>"
+        },
+        {
+            "id": "ph4",
+            "title": "PHASE 4: LOAD BALANCER REMOVAL",
+            "description": "Decom Kemp, new DMZ routing.",
+            "startDate": "2026-03-08T09:00:00.000Z",
+            "endDate": "2026-03-15T17:00:00.000Z",
+            "status": "not-started",
+            "priority": "medium",
+            "dependencies": [
+                "ph3"
+            ],
+            "order": 4,
+            "scopeOfWorks": ""
+        },
+        {
+            "id": "4.1",
+            "parentId": "ph4",
+            "title": "4.1 Exchange Migration",
+            "description": "Move Exchange off Kemp.",
+            "startDate": "2026-03-08T09:00:00.000Z",
+            "endDate": "2026-03-10T17:00:00.000Z",
+            "status": "not-started",
+            "priority": "medium",
+            "dependencies": [],
+            "order": 4.1,
+            "scopeOfWorks": "<ul><li>Create internal VIP</li><li>Create external VIP (1:1 NAT)</li><li>Update DNS</li><li>Test mail flow</li><li>Remove Exchange services from Kemp</li></ul>"
+        },
+        {
+            "id": "4.2",
+            "parentId": "ph4",
+            "title": "4.2 Web Services Migration",
+            "description": "Move web off Kemp.",
+            "startDate": "2026-03-11T09:00:00.000Z",
+            "endDate": "2026-03-13T17:00:00.000Z",
+            "status": "not-started",
+            "priority": "medium",
+            "dependencies": [
+                "4.1"
+            ],
+            "order": 4.2,
+            "scopeOfWorks": "<ul><li>Configure svr-websites-01 reverse proxy</li><li>Create firewall NAT rules</li><li>Test internal and external access</li><li>Remove web services from Kemp</li></ul>"
+        },
+        {
+            "id": "4.3",
+            "parentId": "ph4",
+            "title": "4.3 Horizon Temporary LB",
+            "description": "Temp LB for Horizon.",
+            "startDate": "2026-03-13T09:00:00.000Z",
+            "endDate": "2026-03-15T17:00:00.000Z",
+            "status": "not-started",
+            "priority": "low",
+            "dependencies": [
+                "4.2"
+            ],
+            "order": 4.3,
+            "scopeOfWorks": "<ul><li>Deploy temporary virtual load balancer</li><li>Repoint existing UAGs</li><li>Validate Horizon access</li><li>Remove Kemp from Horizon traffic path</li></ul><p><strong>Gate:</strong> Kemp no longer in active use</p>"
+        },
+        {
+            "id": "ph5",
+            "title": "PHASE 5: HORIZON REBUILD & CUTOVER",
+            "description": "New VDI environment.",
+            "startDate": "2026-02-25T09:00:00.000Z",
+            "endDate": "2026-03-23T17:00:00.000Z",
+            "status": "not-started",
+            "priority": "critical",
+            "dependencies": [
+                "ph3"
+            ],
+            "order": 5,
+            "scopeOfWorks": ""
+        },
+        {
+            "id": "5.1",
+            "parentId": "ph5",
+            "title": "5.1 Insentra Assessment",
+            "description": "Pre-deployment analysis.",
+            "startDate": "2026-02-25T09:00:00.000Z",
+            "endDate": "2026-03-05T17:00:00.000Z",
+            "status": "not-started",
+            "priority": "medium",
+            "dependencies": [
+                "3.1"
+            ],
+            "order": 5.1,
+            "scopeOfWorks": "<ul><li>Assess existing Horizon deployment</li><li>Review configuration and performance</li><li>Identify prerequisites</li><li>Confirm target architecture</li></ul>"
+        },
+        {
+            "id": "5.2",
+            "parentId": "ph5",
+            "title": "5.2 Horizon Deployment",
+            "description": "Install new env.",
+            "startDate": "2026-03-08T09:00:00.000Z",
+            "endDate": "2026-03-14T17:00:00.000Z",
+            "status": "not-started",
+            "priority": "critical",
+            "dependencies": [
+                "3.4",
+                "5.1"
+            ],
+            "order": 5.2,
+            "scopeOfWorks": "<ul><li>Deploy new Connection Servers</li><li>Deploy Horizon infrastructure components</li><li>Configure Horizon services</li><li>Validate functionality</li></ul><p><strong>Dependency:</strong> 7 March milestone</p>"
+        },
+        {
+            "id": "5.4",
+            "parentId": "ph5",
+            "title": "5.4 Capacity Step Change",
+            "description": "Add remaining hosts.",
+            "startDate": "2026-03-14T09:00:00.000Z",
+            "endDate": "2026-03-15T17:00:00.000Z",
+            "status": "not-started",
+            "priority": "high",
+            "dependencies": [
+                "5.2"
+            ],
+            "order": 5.4,
+            "scopeOfWorks": "<ul><li>Rack remaining compute hosts</li><li>Connect to core and storage</li><li>Add hosts to cluster</li><li>Validate capacity</li></ul>"
+        },
+        {
+            "id": "5.5",
+            "parentId": "ph5",
+            "title": "5.5 User Migration (Week 3)",
+            "description": "Pilot and Full Migration.",
+            "startDate": "2026-03-16T09:00:00.000Z",
+            "endDate": "2026-03-20T17:00:00.000Z",
+            "status": "not-started",
+            "priority": "critical",
+            "dependencies": [
+                "5.4"
+            ],
+            "order": 5.5,
+            "scopeOfWorks": "<ul><li>Migrate pilot users</li><li>Validate user experience</li><li>Migrate remaining users</li><li>Monitor stability</li></ul>"
+        },
+        {
+            "id": "5.6",
+            "parentId": "ph5",
+            "title": "5.6 Horizon Cutover",
+            "description": "Final switchover.",
+            "startDate": "2026-03-20T09:00:00.000Z",
+            "endDate": "2026-03-23T17:00:00.000Z",
+            "status": "not-started",
+            "priority": "critical",
+            "dependencies": [
+                "5.5"
+            ],
+            "order": 5.6,
+            "scopeOfWorks": "<ul><li>Set vdi.seddon.co.uk as primary</li><li>Retain horizon.seddon.co.uk for rollback</li><li>Decommission legacy Horizon after stability period</li></ul>"
+        },
+        {
+            "id": "ph6",
+            "title": "PHASE 6: EXPANSION & MIGRATION",
+            "description": "Prod migration and decommission.",
+            "startDate": "2026-03-24T09:00:00.000Z",
+            "endDate": "2026-04-30T17:00:00.000Z",
+            "status": "not-started",
+            "priority": "medium",
+            "dependencies": [
+                "ph5"
+            ],
+            "order": 6,
+            "scopeOfWorks": ""
+        },
+        {
+            "id": "6.1",
+            "parentId": "ph6",
+            "title": "6.1 Pure Array 2 Install",
+            "description": "Second storage array.",
+            "startDate": "2026-03-24T09:00:00.000Z",
+            "endDate": "2026-03-31T17:00:00.000Z",
+            "status": "not-started",
+            "priority": "high",
+            "dependencies": [
+                "5.6"
+            ],
+            "order": 6.1,
+            "scopeOfWorks": "<ul><li>Rack Pure Storage Array 2</li><li>Connect to storage network</li><li>Configure replication (if applicable)</li></ul>"
+        },
+        {
+            "id": "6.2",
+            "parentId": "ph6",
+            "title": "6.2 Production Migration",
+            "description": "Move server workloads.",
+            "startDate": "2026-04-01T09:00:00.000Z",
+            "endDate": "2026-04-20T17:00:00.000Z",
+            "status": "not-started",
+            "priority": "high",
+            "dependencies": [
+                "6.1"
+            ],
+            "order": 6.2,
+            "scopeOfWorks": "<ul><li>Migrate server workloads</li><li>Migrate file services</li><li>Validate application functionality</li></ul>"
+        },
+        {
+            "id": "6.3",
+            "parentId": "ph6",
+            "title": "6.3 Legacy Decommissioning",
+            "description": "Final removal.",
+            "startDate": "2026-04-21T09:00:00.000Z",
+            "endDate": "2026-04-30T17:00:00.000Z",
+            "status": "not-started",
+            "priority": "low",
+            "dependencies": [
+                "6.2"
+            ],
+            "order": 6.3,
+            "scopeOfWorks": "<ul><li>Decommission Kemp appliances</li><li>Remove physical DMZ switch</li><li>Remove old core stack (if applicable)</li><li>Remove unused VLANs and routes</li></ul>"
+        }
+    ]
+}
