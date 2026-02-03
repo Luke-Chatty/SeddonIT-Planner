@@ -59,6 +59,12 @@ When deployed (e.g. on [Dokploy](https://dokploy.com)), you can store plans in P
 
 See `.env.example` for a template. No code changes are required—the app detects the database automatically.
 
+### Authentication (Entra ID SSO + backup login)
+
+The app uses **Microsoft Entra ID (Azure AD)** for SSO, with an optional **backup email/password** login when SSO is unavailable. Set `NEXTAUTH_URL`, `NEXTAUTH_SECRET`, and optionally `AZURE_AD_CLIENT_ID`, `AZURE_AD_CLIENT_SECRET`, `AZURE_AD_TENANT_ID`. For backup login, set `BACKUP_ADMIN_EMAIL` and `BACKUP_ADMIN_PASSWORD`.
+
+**Full step-by-step:** [docs/ENTRA_SETUP.md](docs/ENTRA_SETUP.md) – how to register the app in Entra ID, get client ID/secret, set redirect URI, and configure permissions.
+
 ## Usage
 
 1. **Create Tasks**: Click "Add Task" to create new infrastructure tasks
