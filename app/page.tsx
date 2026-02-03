@@ -27,7 +27,7 @@ import { SharePlanModal } from '@/components/SharePlanModal';
 export default function PlansPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
-  const { collection, loadPlans, addPlan, deletePlan, updatePlan, setActivePlan } = usePlansStore();
+  const { collection, loadPlans, addPlan, deletePlan, updatePlan, setActivePlan, storageMode } = usePlansStore();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -176,6 +176,16 @@ export default function PlansPage() {
           <p className="text-muted-foreground text-lg">
             Manage and track your infrastructure milestones.
           </p>
+          {storageMode === 'local' && (
+            <p className="mt-2 text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2 inline-block">
+              Saved to this device only. Set <code className="text-xs bg-amber-100 dark:bg-amber-900/40 px-1 rounded">DATABASE_URL</code> and run migrations to persist plans across reboots and share with others.
+            </p>
+          )}
+          {storageMode === 'database' && (
+            <p className="mt-2 text-sm text-green-600 dark:text-green-400">
+              Plans are saved to the database and persist across devices.
+            </p>
+          )}
         </div>
 
         {collection.plans.length === 0 ? (
@@ -203,7 +213,8 @@ export default function PlansPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {collection.plans.map((plan, index) => {
               const planWithRole = plan as PlanWithRole;
-              const role = planWithRole.currentUserRole;
+              // When using localStorage there is no currentUserRole; treat as owner (only user on this device)
+              const role = planWithRole.currentUserRole ?? (storageMode === 'local' ? 'OWNER' : undefined);
               const canEdit = role === 'OWNER' || role === 'EDITOR';
               const canDelete = role === 'OWNER';
               const canShare = role === 'OWNER';

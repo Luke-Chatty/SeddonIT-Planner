@@ -55,7 +55,9 @@ When deployed (e.g. on [Dokploy](https://dokploy.com)), you can store plans in P
    docker exec -w /app <app-container-name> npx prisma migrate deploy
    ```
    Or from a shell already in the container: `cd /app && npx prisma migrate deploy`
-4. Restart the app. The app will use the database when `DATABASE_URL` is set; otherwise it falls back to localStorage.
+4. Restart the app. The app will use the database when `DATABASE_URL` is set **and** the database is reachable; otherwise it falls back to **browser localStorage**.
+
+**Important:** Plans only persist across reboots (and across devices) when PostgreSQL is in use. If you see "Saved to this device only" on the homepage or plans disappear after a restart, set `DATABASE_URL` in your deployment (e.g. Dokploy → your app → Environment), run `npx prisma migrate deploy` once, then restart.
 
 See `.env.example` for a template. No code changes are required—the app detects the database automatically.
 

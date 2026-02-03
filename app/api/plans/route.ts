@@ -33,8 +33,14 @@ export async function GET() {
     const collection: PlansCollection = {
       plans: plans.map((p) => {
         const plan = prismaPlanToPlan(p);
-        const role =
-          p.ownerId === userId ? 'OWNER' : p.members.find((m) => m.userId === userId)?.role ?? null;
+        const isOwner = p.ownerId === userId;
+        const member = p.members.find((m) => m.userId === userId);
+        // Legacy plans with no owner: treat any member as OWNER so they can Share/Delete
+        const role = isOwner
+          ? 'OWNER'
+          : p.ownerId == null && member
+            ? 'OWNER'
+            : member?.role ?? null;
         return { ...plan, currentUserRole: role ?? undefined };
       }),
       activePlanId: null,

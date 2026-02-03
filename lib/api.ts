@@ -98,5 +98,8 @@ export async function updatePlan(plan: InfrastructurePlan): Promise<Infrastructu
 
 export async function deletePlanApi(planId: string): Promise<void> {
   const res = await fetch(`/api/plans/${planId}`, { method: 'DELETE' });
-  if (!res.ok && res.status !== 204) throw new Error('Failed to delete plan');
+  if (res.ok || res.status === 204) return;
+  const data = await res.json().catch(() => ({}));
+  const message = typeof data?.error === 'string' ? data.error : 'Failed to delete plan';
+  throw new Error(message);
 }

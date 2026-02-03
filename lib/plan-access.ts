@@ -27,7 +27,6 @@ export async function getPlanAccess(
   });
   if (!plan) return null;
 
-  // Plans with no ownerId (legacy) are not accessible until assigned
   const isOwner = plan.ownerId != null && plan.ownerId === userId;
   const member = plan.members.find((m) => m.userId === userId);
 
@@ -41,10 +40,12 @@ export async function getPlanAccess(
     };
   }
   if (member) {
+    // Plans with no ownerId (legacy): allow any member to delete so they can clean up
+    const canDelete = plan.ownerId == null;
     return {
       canView: true,
       canEdit: member.role === 'EDITOR' || member.role === 'OWNER',
-      canDelete: false,
+      canDelete,
       canManageMembers: false,
       role: member.role,
     };

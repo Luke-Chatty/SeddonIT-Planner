@@ -19,9 +19,13 @@ function generatePlanId(): string {
   return `plan-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
 
+export type StorageMode = 'database' | 'local';
+
 interface PlansStore {
   collection: PlansCollection | null;
   isLoading: boolean;
+  /** Set after loadPlans: 'database' = plans persist across devices/reboots; 'local' = browser only */
+  storageMode: StorageMode | null;
 
   // Actions
   loadPlans: () => Promise<void>;
@@ -37,6 +41,7 @@ interface PlansStore {
 export const usePlansStore = create<PlansStore>((set, get) => ({
   collection: null,
   isLoading: true,
+  storageMode: null,
 
   loadPlans: async () => {
     if (typeof window === 'undefined') {
@@ -48,6 +53,7 @@ export const usePlansStore = create<PlansStore>((set, get) => ({
           updatedAt: new Date().toISOString(),
         },
         isLoading: false,
+        storageMode: null,
       });
       return;
     }
@@ -61,16 +67,16 @@ export const usePlansStore = create<PlansStore>((set, get) => ({
     if (useDb) {
       try {
         const collection = await fetchPlans();
-        set({ collection, isLoading: false });
+        set({ collection, isLoading: false, storageMode: 'database' });
       } catch (err) {
         console.error('Failed to load plans from database, falling back to local storage:', err);
         setUseDatabase(false);
         const collection = loadPlansFromStorage();
-        set({ collection, isLoading: false });
+        set({ collection, isLoading: false, storageMode: 'local' });
       }
     } else {
       const collection = loadPlansFromStorage();
-      set({ collection, isLoading: false });
+      set({ collection, isLoading: false, storageMode: 'local' });
     }
   },
 
@@ -183,20 +189,24 @@ export const usePlansStore = create<PlansStore>((set, get) => ({
 
     if (getUseDatabase()) {
       (async () => {
+        const col = get().collection;
+        if (!col) return;
         try {
           await deletePlanApi(planId);
           const updatedCollection = {
-            ...collection,
-            plans: collection.plans.filter((p) => p.id !== planId),
+            ...col,
+            plans: col.plans.filter((p) => p.id !== planId),
             activePlanId:
-              collection.activePlanId === planId
-                ? collection.plans.find((p) => p.id !== planId)?.id ?? null
-                : collection.activePlanId,
+              col.activePlanId === planId
+                ? col.plans.find((p) => p.id !== planId)?.id ?? null
+                : col.activePlanId,
             updatedAt: new Date().toISOString(),
           };
           set({ collection: updatedCollection });
         } catch (err) {
           console.error('Failed to delete plan:', err);
+          const message = err instanceof Error ? err.message : 'Failed to delete plan';
+          if (typeof window !== 'undefined') window.alert(message);
         }
       })();
       return;

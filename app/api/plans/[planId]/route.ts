@@ -164,7 +164,10 @@ export async function DELETE(
   try {
     const access = await getPlanAccess(planId, userId);
     if (!access?.canDelete) {
-      return NextResponse.json({ error: 'Only the plan owner can delete this plan' }, { status: 403 });
+      return NextResponse.json(
+        { error: 'Only the plan owner can delete this plan. If you created it, try signing out and back in.' },
+        { status: 403 }
+      );
     }
 
     await prisma.plan.delete({
