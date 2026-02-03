@@ -10,7 +10,7 @@ An interactive web application for creating and managing IT infrastructure plans
 - **Task Management**: Create, edit, and delete tasks with dependencies, priorities, and status tracking
 - **Documentation System**: Add Markdown documentation to each task with a built-in editor and viewer
 - **Multiple View Modes**: Switch between Gantt-only, split view, tasks-only, or documentation-only views
-- **Data Persistence**: Auto-save to browser localStorage with import/export functionality
+- **Data Persistence**: Auto-save to browser localStorage, or **PostgreSQL** when `DATABASE_URL` is set (e.g. on Dokploy)
 - **Dark Mode**: Toggle between light and dark themes
 - **Responsive Design**: Works on desktop and tablet devices
 
@@ -41,6 +41,23 @@ npm run build
 npm start
 ```
 
+### Optional: PostgreSQL database
+
+When deployed (e.g. on [Dokploy](https://dokploy.com)), you can store plans in PostgreSQL instead of browser localStorage.
+
+1. Create a PostgreSQL database (Dokploy can run one for you).
+2. Set the connection string in the app environment:
+   ```bash
+   DATABASE_URL="postgresql://USER:PASSWORD@HOST:5432/DATABASE?schema=public"
+   ```
+3. Run migrations once (e.g. in Dokploy run a one-off job or pre-start command):
+   ```bash
+   npx prisma migrate deploy
+   ```
+4. Restart the app. The app will use the database when `DATABASE_URL` is set; otherwise it falls back to localStorage.
+
+See `.env.example` for a template. No code changes are required—the app detects the database automatically.
+
 ## Usage
 
 1. **Create Tasks**: Click "Add Task" to create new infrastructure tasks
@@ -56,6 +73,7 @@ npm start
 - **Styling**: Tailwind CSS
 - **Gantt Chart**: frappe-gantt
 - **State Management**: Zustand
+- **Database (optional)**: Prisma + PostgreSQL
 - **Markdown**: react-markdown
 - **Icons**: lucide-react
 - **Date Utilities**: date-fns

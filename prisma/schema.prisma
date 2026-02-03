@@ -1,0 +1,53 @@
+// Prisma schema for Seddon IT Planner - PostgreSQL
+// Run: npx prisma migrate dev (dev) or npx prisma migrate deploy (production)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Plan {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  startDate   DateTime
+  endDate     DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tasks     Task[]
+  milestones Milestone[]
+}
+
+model Task {
+  id                String   @id @default(cuid())
+  planId            String
+  plan              Plan     @relation(fields: [planId], references: [id], onDelete: Cascade)
+  title             String
+  description       String  @default("")
+  startDate         DateTime
+  endDate           DateTime
+  status            String  @default("not-started") // not-started | in-progress | completed | blocked
+  priority          String  @default("medium")      // low | medium | high | critical
+  dependencies      String[] @default([])          // Task IDs
+  assignedTo        String?
+  documentation     String?  @db.Text
+  scopeOfWorks      String?  @db.Text
+  designInformation String?  @db.Text
+  order             Int     @default(1)
+  parentId          String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model Milestone {
+  id          String   @id @default(cuid())
+  planId      String
+  plan        Plan     @relation(fields: [planId], references: [id], onDelete: Cascade)
+  title       String
+  date        DateTime
+  description String?  @db.Text
+}

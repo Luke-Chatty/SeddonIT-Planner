@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { InfrastructurePlan, Task, Milestone } from './types';
-import { savePlanToStorage, generateTaskId, generateMilestoneId } from './storage';
-import { parseISO } from 'date-fns';
+import { savePlanToStorage, loadPlanFromStorage, generateTaskId, generateMilestoneId } from './storage';
+import { getUseDatabase, fetchPlan, updatePlan as updatePlanApi } from './api';
 
 interface PlanStore {
   plan: InfrastructurePlan | null;
@@ -43,48 +43,57 @@ export const usePlanStore = create<PlanStore>((set, get) => ({
 
   loadPlan: (planId: string) => {
     if (typeof window === 'undefined') {
-      set({ 
+      set({
         plan: defaultPlan(planId),
         planId,
-        isLoading: false 
+        isLoading: false,
       });
       return;
     }
-    
-    // Import dynamically to avoid circular dependency
-    import('./storage').then(({ loadPlanFromStorage }) => {
-      const stored = loadPlanFromStorage(planId);
-      let plan = stored || defaultPlan(planId);
-      
-      // Ensure plan has ID
-      if (!plan.id) {
-        plan = { ...plan, id: planId };
-      }
-      
-      // Initialize order for tasks that don't have it
-      if (plan.tasks.some(t => t.order === undefined)) {
-        plan = {
-          ...plan,
-          tasks: plan.tasks.map((task, index) => ({
+
+    const normalizePlan = (plan: InfrastructurePlan): InfrastructurePlan => {
+      let p = plan;
+      if (!p.id) p = { ...p, id: planId };
+      if (p.tasks.some((t) => t.order === undefined)) {
+        p = {
+          ...p,
+          tasks: p.tasks.map((task, index) => ({
             ...task,
             order: task.order ?? index + 1,
           })),
         };
       }
-      
-      set({ 
-        plan,
-        planId,
-        isLoading: false 
-      });
-    });
+      return p;
+    };
+
+    if (getUseDatabase()) {
+      fetchPlan(planId)
+        .then((fetched) => {
+          const plan = fetched ? normalizePlan(fetched) : defaultPlan(planId);
+          set({ plan, planId, isLoading: false });
+        })
+        .catch(() => {
+          const stored = loadPlanFromStorage(planId);
+          const plan = stored ? normalizePlan(stored) : defaultPlan(planId);
+          set({ plan, planId, isLoading: false });
+        });
+      return;
+    }
+
+    const stored = loadPlanFromStorage(planId);
+    const plan = stored ? normalizePlan(stored) : defaultPlan(planId);
+    set({ plan, planId, isLoading: false });
   },
 
   savePlan: () => {
     const { plan } = get();
-    if (plan) {
-      savePlanToStorage(plan);
+    if (!plan) return;
+
+    if (getUseDatabase()) {
+      updatePlanApi(plan).catch((err) => console.error('Failed to save plan:', err));
+      return;
     }
+    savePlanToStorage(plan);
   },
 
   setPlan: (plan: InfrastructurePlan) => {

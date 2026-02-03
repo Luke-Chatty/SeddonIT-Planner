@@ -57,13 +57,13 @@ export default function PlansPage() {
     }
   }, [isDarkMode]);
 
-  const handleCreatePlan = () => {
+  const handleCreatePlan = async () => {
     if (!formData.name.trim() || !formData.startDate || !formData.endDate) {
       alert('Please fill in all required fields');
       return;
     }
 
-    const planId = addPlan({
+    const planId = await addPlan({
       name: formData.name.trim(),
       description: formData.description.trim() || undefined,
       startDate: new Date(formData.startDate).toISOString(),
