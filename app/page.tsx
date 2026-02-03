@@ -178,7 +178,8 @@ export default function PlansPage() {
           </p>
           {storageMode === 'local' && (
             <p className="mt-2 text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2 inline-block">
-              Saved to this device only. Set <code className="text-xs bg-amber-100 dark:bg-amber-900/40 px-1 rounded">DATABASE_URL</code> and run migrations to persist plans across reboots and share with others.
+              Saved to this device only. Set <code className="text-xs bg-amber-100 dark:bg-amber-900/40 px-1 rounded">DATABASE_URL</code> and run migrations to persist plans across reboots and share with others.{' '}
+              <a href="/api/health" target="_blank" rel="noopener noreferrer" className="underline font-medium">Check connection</a>
             </p>
           )}
           {storageMode === 'database' && (

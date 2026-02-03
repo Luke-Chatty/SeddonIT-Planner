@@ -91,35 +91,15 @@ export const usePlansStore = create<PlansStore>((set, get) => ({
     if (!collection) return '';
 
     if (getUseDatabase()) {
-      try {
-        const newPlan = await createPlanApi(planData);
-        const updatedCollection = {
-          ...collection,
-          plans: [newPlan, ...collection.plans],
-          activePlanId: newPlan.id,
-          updatedAt: new Date().toISOString(),
-        };
-        set({ collection: updatedCollection });
-        return newPlan.id;
-      } catch (err) {
-        console.error('Failed to create plan:', err);
-        const fallbackId = generatePlanId();
-        const newPlan: InfrastructurePlan = {
-          ...planData,
-          id: fallbackId,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-        set({
-          collection: {
-            ...collection,
-            plans: [...collection.plans, newPlan],
-            activePlanId: newPlan.id,
-            updatedAt: new Date().toISOString(),
-          },
-        });
-        return fallbackId;
-      }
+      const newPlan = await createPlanApi(planData);
+      const updatedCollection = {
+        ...collection,
+        plans: [newPlan, ...collection.plans],
+        activePlanId: newPlan.id,
+        updatedAt: new Date().toISOString(),
+      };
+      set({ collection: updatedCollection });
+      return newPlan.id;
     }
 
     const newPlan: InfrastructurePlan = {

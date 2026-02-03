@@ -59,7 +59,26 @@ When deployed (e.g. on [Dokploy](https://dokploy.com)), you can store plans in P
 
 **Important:** Plans only persist across reboots (and across devices) when PostgreSQL is in use. If you see "Saved to this device only" on the homepage or plans disappear after a restart, set `DATABASE_URL` in your deployment (e.g. Dokploy → your app → Environment), run `npx prisma migrate deploy` once, then restart.
 
+**If you see errors like** `The table "public.PlanMember" does not exist` **or** `The column "(not available)" does not exist`: the database schema is behind the app. Run migrations against your **production** database (see below).
+
 See `.env.example` for a template. No code changes are required—the app detects the database automatically.
+
+#### Running migrations against production
+
+Migrations must be run in an environment where `DATABASE_URL` points to your production PostgreSQL.
+
+- **Option A – From your machine** (if it can reach the DB):
+  ```bash
+  export DATABASE_URL="postgresql://USER:PASSWORD@HOST:5432/DATABASE?schema=public"
+  npx prisma migrate deploy
+  ```
+- **Option B – Inside the app container** (e.g. Dokploy):
+  ```bash
+  docker exec -w /app <app-container-name> npx prisma migrate deploy
+  ```
+  Or in Dokploy: open a shell for the app and run `npx prisma migrate deploy` (ensure `DATABASE_URL` is set for that container).
+
+After migrations succeed, restart the app. The container entrypoint also runs `prisma migrate deploy` on startup when `DATABASE_URL` is set; if the DB was unreachable at first start, run the command above once manually.
 
 ### Authentication (Entra ID SSO + backup login)
 
