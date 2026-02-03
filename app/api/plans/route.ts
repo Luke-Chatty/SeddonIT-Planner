@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth-server';
 import { prisma } from '@/lib/prisma';
@@ -83,6 +84,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Generate new ids for tasks and milestones so imported ids never collide with existing rows
+    const taskIdMap = new Map<string, string>();
+    tasks.forEach((t) => taskIdMap.set(t.id, randomUUID()));
+
     const plan = await prisma.plan.create({
       data: {
         name,
@@ -91,26 +96,32 @@ export async function POST(request: NextRequest) {
         endDate: new Date(endDate),
         ownerId: userId,
         tasks: {
-          create: tasks.map((t) => ({
-            id: t.id,
-            title: t.title,
-            description: t.description ?? '',
-            startDate: new Date(t.startDate),
-            endDate: new Date(t.endDate),
-            status: t.status,
-            priority: t.priority,
-            dependencies: t.dependencies ?? [],
-            assignedTo: t.assignedTo ?? null,
-            documentation: t.documentation ?? null,
-            scopeOfWorks: t.scopeOfWorks ?? null,
-            designInformation: t.designInformation ?? null,
-            order: t.order ?? 1,
-            parentId: t.parentId ?? null,
-          })),
+          create: tasks.map((t) => {
+            const newId = taskIdMap.get(t.id)!;
+            const newDeps = (t.dependencies ?? [])
+              .map((d) => taskIdMap.get(d))
+              .filter((id): id is string => id != null);
+            return {
+              id: newId,
+              title: t.title,
+              description: t.description ?? '',
+              startDate: new Date(t.startDate),
+              endDate: new Date(t.endDate),
+              status: t.status,
+              priority: t.priority,
+              dependencies: newDeps,
+              assignedTo: t.assignedTo ?? null,
+              documentation: t.documentation ?? null,
+              scopeOfWorks: t.scopeOfWorks ?? null,
+              designInformation: t.designInformation ?? null,
+              order: t.order ?? 1,
+              parentId: t.parentId ? (taskIdMap.get(t.parentId) ?? null) : null,
+            };
+          }),
         },
         milestones: {
           create: milestones.map((m) => ({
-            id: m.id,
+            id: randomUUID(),
             title: m.title,
             date: new Date(m.date),
             description: m.description ?? null,
