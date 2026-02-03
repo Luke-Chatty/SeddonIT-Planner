@@ -59,12 +59,17 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (session.user) {
-        (session.user as { id?: string }).id = token.sub ?? (session.user as { id?: string }).id;
+        const u = session.user as { id?: string; image?: string };
+        u.id = token.sub ?? u.id;
+        if (token.picture) u.image = token.picture as string;
       }
       return session;
     },
     async jwt({ token, user }) {
-      if (user) token.sub = user.id;
+      if (user) {
+        token.sub = user.id;
+        if (user.image) token.picture = user.image;
+      }
       return token;
     },
   },

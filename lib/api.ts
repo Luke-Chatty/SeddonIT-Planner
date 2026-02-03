@@ -1,4 +1,4 @@
-import type { InfrastructurePlan, PlansCollection } from './types';
+import type { InfrastructurePlan, PlansCollection, PlanWithRole } from './types';
 
 let useDatabase = false;
 
@@ -41,11 +41,46 @@ export async function createPlan(
   return res.json();
 }
 
-export async function fetchPlan(planId: string): Promise<InfrastructurePlan | null> {
+export async function fetchPlan(planId: string): Promise<PlanWithRole | null> {
   const res = await fetch(`/api/plans/${planId}`);
   if (res.status === 404) return null;
   if (!res.ok) throw new Error('Failed to load plan');
   return res.json();
+}
+
+export type PlanMemberItem = { userId: string; email: string | null; name: string | null; role: string };
+
+export async function fetchPlanMembers(planId: string): Promise<PlanMemberItem[]> {
+  const res = await fetch(`/api/plans/${planId}/members`);
+  if (!res.ok) throw new Error('Failed to load members');
+  const data = await res.json();
+  return data.members ?? [];
+}
+
+export async function invitePlanMember(
+  planId: string,
+  email: string,
+  role: 'EDITOR' | 'VIEWER'
+): Promise<void> {
+  const res = await fetch(`/api/plans/${planId}/members`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, role }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error ?? 'Failed to invite');
+  }
+}
+
+export async function removePlanMember(planId: string, userId: string): Promise<void> {
+  const res = await fetch(`/api/plans/${planId}/members?userId=${encodeURIComponent(userId)}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error ?? 'Failed to remove');
+  }
 }
 
 export async function updatePlan(plan: InfrastructurePlan): Promise<InfrastructurePlan> {

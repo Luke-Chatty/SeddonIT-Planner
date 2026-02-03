@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useSession, signOut } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import { usePlansStore } from '@/lib/plansStore';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/UI/Button';
@@ -16,14 +16,13 @@ import {
   ArrowRight,
   Download,
   Upload,
-  Moon,
-  Sun,
-  Layout,
-  LogOut,
 } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 import { exportPlanToFile, importPlanFromFile } from '@/lib/storage';
-import { InfrastructurePlan } from '@/lib/types';
+import { InfrastructurePlan, type PlanWithRole } from '@/lib/types';
+import { Share2 } from 'lucide-react';
+import { AppHeader } from '@/components/AppHeader';
+import { SharePlanModal } from '@/components/SharePlanModal';
 
 export default function PlansPage() {
   const router = useRouter();
@@ -32,8 +31,8 @@ export default function PlansPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [sharePlanId, setSharePlanId] = useState<string | null>(null);
   const [editingPlan, setEditingPlan] = useState<InfrastructurePlan | null>(null);
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -46,19 +45,6 @@ export default function PlansPage() {
       loadPlans();
     }
   }, [loadPlans]);
-
-  useEffect(() => {
-    const isDark = document.documentElement.classList.contains('dark');
-    setIsDarkMode(isDark);
-  }, []);
-
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [isDarkMode]);
 
   const handleCreatePlan = async () => {
     if (!formData.name.trim() || !formData.startDate || !formData.endDate) {
@@ -159,65 +145,29 @@ export default function PlansPage() {
       {/* Background Decoration */}
       <div className="fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-100/50 via-background to-background dark:from-blue-900/20 dark:via-background dark:to-background pointer-events-none" />
 
-      {/* Header */}
-      <header className="sticky top-0 z-50 glass border-b border-border/40">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <Layout className="w-6 h-6 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-600 dark:to-blue-400">
-                Seddon IT Plans
-              </h1>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsImportModalOpen(true)}
-              className="hidden sm:flex"
-            >
-              <Upload className="w-4 h-4 mr-2" />
-              Import
-            </Button>
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => setIsCreateModalOpen(true)}
-              className="shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-shadow"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              New Plan
-            </Button>
-            <div className="w-px h-6 bg-border mx-1" />
-            <span className="text-sm text-muted-foreground hidden sm:inline truncate max-w-[120px]">
-              {session?.user?.email ?? session?.user?.name ?? ''}
-            </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsDarkMode(!isDarkMode)}
-              className="w-9 h-9 p-0 rounded-full"
-            >
-              {isDarkMode ? (
-                <Sun className="w-4 h-4" />
-              ) : (
-                <Moon className="w-4 h-4" />
-              )}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => signOut({ callbackUrl: '/auth/signin' })}
-              title="Sign out"
-            >
-              <LogOut className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      </header>
+      <AppHeader
+        title="Seddon IT Plans"
+        showLogo={true}
+      >
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setIsImportModalOpen(true)}
+          className="hidden sm:flex"
+        >
+          <Upload className="w-4 h-4 mr-2" />
+          Import
+        </Button>
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={() => setIsCreateModalOpen(true)}
+          className="shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-shadow"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          New Plan
+        </Button>
+      </AppHeader>
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-6 py-12">
@@ -252,6 +202,11 @@ export default function PlansPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {collection.plans.map((plan, index) => {
+              const planWithRole = plan as PlanWithRole;
+              const role = planWithRole.currentUserRole;
+              const canEdit = role === 'OWNER' || role === 'EDITOR';
+              const canDelete = role === 'OWNER';
+              const canShare = role === 'OWNER';
               const taskCount = plan.tasks.length;
               const completedCount = plan.tasks.filter(t => t.status === 'completed').length;
               const completionRate = taskCount > 0 ? Math.round((completedCount / taskCount) * 100) : 0;
@@ -271,23 +226,39 @@ export default function PlansPage() {
                         {plan.description || "No description provided."}
                       </p>
                     </div>
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity translate-x-2 group-hover:translate-x-0">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEditPlan(plan)}
-                        className="h-8 w-8 p-0 hover:text-primary hover:bg-primary/10"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeletePlan(plan.id, plan.name)}
-                        className="h-8 w-8 p-0 hover:text-destructive hover:bg-destructive/10"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                    <div className="flex gap-1 items-center">
+                      {canShare && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setSharePlanId(plan.id)}
+                          className="h-8 px-2 hover:text-primary hover:bg-primary/10 gap-1.5"
+                          title="Share this plan with others"
+                        >
+                          <Share2 className="w-4 h-4" />
+                          <span className="text-xs font-medium hidden sm:inline">Share</span>
+                        </Button>
+                      )}
+                      {canEdit && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEditPlan(plan)}
+                          className="h-8 w-8 p-0 hover:text-primary hover:bg-primary/10"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </Button>
+                      )}
+                      {canDelete && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeletePlan(plan.id, plan.name)}
+                          className="h-8 w-8 p-0 hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
                     </div>
                   </div>
 
@@ -492,6 +463,8 @@ export default function PlansPage() {
           </div>
         </div>
       </Modal>
+
+      <SharePlanModal planId={sharePlanId} onClose={() => setSharePlanId(null)} />
     </div>
   );
 }

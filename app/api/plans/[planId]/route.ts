@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth-server';
 import { prisma } from '@/lib/prisma';
 import { prismaPlanToPlan } from '@/lib/db-plan';
+import { getCurrentUserId, getPlanAccess } from '@/lib/plan-access';
 import type { InfrastructurePlan } from '@/lib/types';
 
 function hasDatabase(): boolean {
@@ -23,8 +24,14 @@ export async function GET(
   }
 
   const { planId } = await params;
+  const userId = getCurrentUserId(session);
 
   try {
+    const access = await getPlanAccess(planId, userId);
+    if (!access?.canView) {
+      return NextResponse.json({ error: 'Plan not found or access denied' }, { status: 404 });
+    }
+
     const plan = await prisma.plan.findUnique({
       where: { id: planId },
       include: { tasks: true, milestones: true },
@@ -34,7 +41,8 @@ export async function GET(
       return NextResponse.json({ error: 'Plan not found' }, { status: 404 });
     }
 
-    return NextResponse.json(prismaPlanToPlan(plan));
+    const payload = prismaPlanToPlan(plan);
+    return NextResponse.json({ ...payload, currentUserRole: access.role });
   } catch (error) {
     console.error('GET /api/plans/[planId] error:', error);
     return NextResponse.json(
@@ -59,8 +67,14 @@ export async function PUT(
   }
 
   const { planId } = await params;
+  const userId = getCurrentUserId(session);
 
   try {
+    const access = await getPlanAccess(planId, userId);
+    if (!access?.canEdit) {
+      return NextResponse.json({ error: 'You do not have permission to edit this plan' }, { status: 403 });
+    }
+
     const body = (await request.json()) as InfrastructurePlan;
 
     if (body.id !== planId) {
@@ -145,8 +159,14 @@ export async function DELETE(
   }
 
   const { planId } = await params;
+  const userId = getCurrentUserId(session);
 
   try {
+    const access = await getPlanAccess(planId, userId);
+    if (!access?.canDelete) {
+      return NextResponse.json({ error: 'Only the plan owner can delete this plan' }, { status: 403 });
+    }
+
     await prisma.plan.delete({
       where: { id: planId },
     });

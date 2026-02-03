@@ -19,15 +19,14 @@ import { Textarea } from '@/components/UI/Textarea';
 import {
   Download,
   Upload,
-  Moon,
-  Sun,
   FileText,
-  Calendar,
   List,
   ChevronLeft,
   ChevronRight,
-  ArrowLeft,
 } from 'lucide-react';
+import { Share2 } from 'lucide-react';
+import { AppHeader } from '@/components/AppHeader';
+import { SharePlanModal } from '@/components/SharePlanModal';
 import { exportPlanToFile, importPlanFromFile, exportGanttAsImage, exportGanttAsPDF } from '@/lib/storage';
 import { Task } from '@/lib/types';
 
@@ -39,11 +38,13 @@ export default function PlanDetailPage() {
   const router = useRouter();
   const planId = params.planId as string;
 
-  const { plan, loadPlan, setPlan } = usePlanStore();
+  const { plan, planRole, loadPlan, setPlan, isLoading } = usePlanStore();
   const { getPlan } = usePlansStore();
+  const canEdit = planRole === 'OWNER' || planRole === 'EDITOR';
+  const canShare = planRole === 'OWNER';
   const [docPanelView, setDocPanelView] = useState<PanelView>('details');
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
   const [planName, setPlanName] = useState('');
   const [planDescription, setPlanDescription] = useState('');
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
@@ -65,19 +66,6 @@ export default function PlanDetailPage() {
       setPlanDescription(plan.description || '');
     }
   }, [plan]);
-
-  useEffect(() => {
-    const isDark = document.documentElement.classList.contains('dark');
-    setIsDarkMode(isDark);
-  }, []);
-
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [isDarkMode]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -173,8 +161,20 @@ export default function PlanDetailPage() {
     return (
       <div className="h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-lg text-muted-foreground">Loading infrastructure plan...</p>
+          {isLoading ? (
+            <>
+              <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+              <p className="text-lg text-muted-foreground">Loading infrastructure plan...</p>
+            </>
+          ) : (
+            <>
+              <p className="text-lg font-medium text-foreground mb-2">Plan not found or access denied</p>
+              <p className="text-muted-foreground mb-4">This plan does not exist or you don’t have permission to view it.</p>
+              <Button variant="primary" onClick={() => router.push('/')}>
+                Back to My Plans
+              </Button>
+            </>
+          )}
         </div>
       </div>
     );
@@ -184,100 +184,78 @@ export default function PlanDetailPage() {
     <div className="h-screen flex flex-col bg-background text-foreground overflow-hidden relative">
       <div className="fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-100/50 via-background to-background dark:from-blue-900/20 dark:via-background dark:to-background pointer-events-none" />
 
-      {/* Compact Top Bar */}
-      <header className="flex-shrink-0 glass border-b border-border/40 px-6 py-3 shadow-sm z-10">
-        <div className="flex items-center justify-between">
-          {/* Left: Plan Info */}
-          <div className="flex items-center gap-3 min-w-0 flex-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => router.push('/')}
-              className="p-2"
+      <AppHeader
+        backHref="/"
+        title={plan.name}
+        subtitle={plan.description ?? undefined}
+        showLogo={false}
+      >
+        {canShare && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShareModalOpen(true)}
+            className="gap-1.5"
+          >
+            <Share2 className="w-4 h-4" />
+            <span className="hidden sm:inline">Share</span>
+          </Button>
+        )}
+        <QuickActions
+          canEdit={canEdit}
+          onAddTask={handleAddTask}
+          onExport={() => setIsExportMenuOpen(!isExportMenuOpen)}
+          onImport={() => setIsImportModalOpen(true)}
+        />
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => router.push(`/plans/${planId}/documentation`)}
+          className="hidden sm:flex"
+        >
+          <FileText className="w-4 h-4 mr-2" />
+          Docs
+        </Button>
+        <div className="relative">
+          {isExportMenuOpen && (
+            <div
+              className="absolute right-0 mt-2 w-56 bg-popover/95 backdrop-blur-xl border border-border rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2"
+              role="menu"
+              aria-label="Export options"
             >
-              <ArrowLeft className="w-4 h-4" />
-            </Button>
-            <div className="p-2 rounded-lg bg-primary/10 flex-shrink-0">
-              <Calendar className="w-5 h-5 text-primary" />
+              <button
+                onClick={handleExportJSON}
+                className="w-full text-left px-4 py-3 text-sm font-medium text-foreground hover:bg-muted/50 transition-all duration-150 flex items-center gap-2"
+                role="menuitem"
+              >
+                <Download className="w-4 h-4 text-primary" />
+                Export as JSON
+              </button>
+              <button
+                onClick={handleExportImage}
+                className="w-full text-left px-4 py-3 text-sm font-medium text-foreground hover:bg-muted/50 transition-all duration-150 flex items-center gap-2 border-t border-border"
+                role="menuitem"
+              >
+                <Download className="w-4 h-4 text-purple-500" />
+                Export Gantt as Image
+              </button>
+              <button
+                onClick={handleExportPDF}
+                className="w-full text-left px-4 py-3 text-sm font-medium text-foreground hover:bg-muted/50 transition-all duration-150 flex items-center gap-2 border-t border-border"
+                role="menuitem"
+              >
+                <Download className="w-4 h-4 text-destructive" />
+                Export Gantt as PDF
+              </button>
             </div>
-            <div className="min-w-0 flex-1">
-              <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-blue-600 dark:to-blue-400 bg-clip-text text-transparent truncate">
-                {plan.name}
-              </h1>
-              {plan.description && (
-                <p className="text-xs text-muted-foreground truncate max-w-md">
-                  {plan.description}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Right: Actions */}
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <QuickActions
-              onAddTask={handleAddTask}
-              onExport={() => setIsExportMenuOpen(!isExportMenuOpen)}
-              onImport={() => setIsImportModalOpen(true)}
-            />
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.push(`/plans/${planId}/documentation`)}
-              className="hidden sm:flex"
-            >
-              <FileText className="w-4 h-4 mr-2" />
-              Docs
-            </Button>
-            <div className="relative">
-              {isExportMenuOpen && (
-                <div
-                  className="absolute right-0 mt-2 w-56 bg-popover/95 backdrop-blur-xl border border-border rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2"
-                  role="menu"
-                  aria-label="Export options"
-                >
-                  <button
-                    onClick={handleExportJSON}
-                    className="w-full text-left px-4 py-3 text-sm font-medium text-foreground hover:bg-muted/50 transition-all duration-150 flex items-center gap-2"
-                    role="menuitem"
-                  >
-                    <Download className="w-4 h-4 text-primary" />
-                    Export as JSON
-                  </button>
-                  <button
-                    onClick={handleExportImage}
-                    className="w-full text-left px-4 py-3 text-sm font-medium text-foreground hover:bg-muted/50 transition-all duration-150 flex items-center gap-2 border-t border-border"
-                    role="menuitem"
-                  >
-                    <Download className="w-4 h-4 text-purple-500" />
-                    Export Gantt as Image
-                  </button>
-                  <button
-                    onClick={handleExportPDF}
-                    className="w-full text-left px-4 py-3 text-sm font-medium text-foreground hover:bg-muted/50 transition-all duration-150 flex items-center gap-2 border-t border-border"
-                    role="menuitem"
-                  >
-                    <Download className="w-4 h-4 text-destructive" />
-                    Export Gantt as PDF
-                  </button>
-                </div>
-              )}
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsDarkMode(!isDarkMode)}
-              aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-              className="p-2 h-9 w-9 rounded-full"
-            >
-              {isDarkMode ? (
-                <Sun className="w-4 h-4" />
-              ) : (
-                <Moon className="w-4 h-4" />
-              )}
-            </Button>
-          </div>
+          )}
         </div>
-      </header>
+      </AppHeader>
+
+      <SharePlanModal
+        planId={shareModalOpen ? planId : null}
+        onClose={() => setShareModalOpen(false)}
+      />
 
       {/* Stats Dashboard */}
       <div className="flex-shrink-0 px-6 py-4 border-b border-border/40 bg-card/40 backdrop-blur-sm">
@@ -368,7 +346,7 @@ export default function PlanDetailPage() {
         />
       </Modal>
 
-      {/* Import Modal */}
+      {/* Import Modal (only reachable when canEdit) */}
       <Modal
         isOpen={isImportModalOpen}
         onClose={() => setIsImportModalOpen(false)}
@@ -391,28 +369,30 @@ export default function PlanDetailPage() {
               />
             </div>
           </div>
-          <div className="pt-4 border-t border-border">
-            <h3 className="text-sm font-medium text-foreground mb-2">
-              Update Plan Information
-            </h3>
-            <Input
-              label="Plan Name"
-              value={planName}
-              onChange={(e) => setPlanName(e.target.value)}
-              className="mb-3"
-            />
-            <Textarea
-              label="Description"
-              value={planDescription}
-              onChange={(e) => setPlanDescription(e.target.value)}
-              rows={3}
-            />
-            <div className="mt-4 flex justify-end">
-              <Button onClick={handleUpdatePlanInfo} variant="primary">
-                Update Plan Info
-              </Button>
+          {canEdit && (
+            <div className="pt-4 border-t border-border">
+              <h3 className="text-sm font-medium text-foreground mb-2">
+                Update Plan Information
+              </h3>
+              <Input
+                label="Plan Name"
+                value={planName}
+                onChange={(e) => setPlanName(e.target.value)}
+                className="mb-3"
+              />
+              <Textarea
+                label="Description"
+                value={planDescription}
+                onChange={(e) => setPlanDescription(e.target.value)}
+                rows={3}
+              />
+              <div className="mt-4 flex justify-end">
+                <Button onClick={handleUpdatePlanInfo} variant="primary">
+                  Update Plan Info
+                </Button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </Modal>
     </div>

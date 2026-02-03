@@ -26,8 +26,9 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { ArrowLeft, Plus, Filter, GripVertical } from 'lucide-react';
+import { Plus, Filter, GripVertical } from 'lucide-react';
 import { getTaskNumber } from '@/lib/utils';
+import { AppHeader } from '@/components/AppHeader';
 
 interface SortableTaskCardProps {
   task: Task;
@@ -37,6 +38,7 @@ interface SortableTaskCardProps {
   onEdit: (task: Task) => void;
   onDelete: (taskId: string) => void;
   isSelected: boolean;
+  readOnly?: boolean;
 }
 
 function SortableTaskCard({
@@ -47,6 +49,7 @@ function SortableTaskCard({
   onEdit,
   onDelete,
   isSelected,
+  readOnly = false,
 }: SortableTaskCardProps) {
   const {
     attributes,
@@ -55,7 +58,7 @@ function SortableTaskCard({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: task.id });
+  } = useSortable({ id: task.id, disabled: readOnly });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -65,10 +68,12 @@ function SortableTaskCard({
 
   return (
     <div ref={setNodeRef} style={style} className="relative">
-      <div className="absolute left-2 top-1/2 -translate-y-1/2 z-10 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300">
-        <GripVertical className="w-5 h-5" {...attributes} {...listeners} />
-      </div>
-      <div className="ml-8">
+      {!readOnly && (
+        <div className="absolute left-2 top-1/2 -translate-y-1/2 z-10 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300">
+          <GripVertical className="w-5 h-5" {...attributes} {...listeners} />
+        </div>
+      )}
+      <div className={readOnly ? '' : 'ml-8'}>
         <TaskCard
           task={task}
           taskNumber={taskNumber}
@@ -76,6 +81,7 @@ function SortableTaskCard({
           onEdit={onEdit}
           onDelete={onDelete}
           isSelected={isSelected}
+          readOnly={readOnly}
         />
       </div>
     </div>
@@ -87,7 +93,8 @@ export default function PlanTasksPage() {
   const router = useRouter();
   const planId = params.planId as string;
 
-  const { plan, selectedTaskId, setSelectedTask, deleteTask, reorderTasks, loadPlan } = usePlanStore();
+  const { plan, planRole, selectedTaskId, setSelectedTask, deleteTask, reorderTasks, loadPlan, isLoading } = usePlanStore();
+  const canEdit = planRole === 'OWNER' || planRole === 'EDITOR';
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
@@ -128,8 +135,20 @@ export default function PlanTasksPage() {
     return (
       <div className="h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-blue-50/20 to-purple-50/10 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-lg text-gray-600 dark:text-gray-400">Loading tasks...</p>
+          {isLoading ? (
+            <>
+              <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+              <p className="text-lg text-gray-600 dark:text-gray-400">Loading tasks...</p>
+            </>
+          ) : (
+            <>
+              <p className="text-lg font-medium text-foreground mb-2">Plan not found or access denied</p>
+              <p className="text-muted-foreground mb-4">This plan does not exist or you don’t have permission to view it.</p>
+              <Button variant="primary" onClick={() => router.push('/')}>
+                Back to My Plans
+              </Button>
+            </>
+          )}
         </div>
       </div>
     );
@@ -160,6 +179,7 @@ export default function PlanTasksPage() {
   const sortedTasks = [...filteredTasks].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
   const handleDragEnd = (event: DragEndEvent) => {
+    if (!canEdit) return;
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
@@ -176,27 +196,13 @@ export default function PlanTasksPage() {
     <div className="min-h-screen bg-background text-foreground relative transition-colors duration-300">
       <div className="fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-100/50 via-background to-background dark:from-blue-900/20 dark:via-background dark:to-background pointer-events-none" />
 
-      {/* Header */}
-      <header className="glass border-b border-border/40 px-6 py-4 shadow-sm sticky top-0 z-10">
-        <div className="flex items-center justify-between max-w-7xl mx-auto">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="p-2"
-              onClick={() => router.push(`/plans/${planId}`)}
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-blue-600 dark:to-blue-400 bg-clip-text text-transparent">
-                Task Management
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                {plan.name} • Drag and drop to reorder tasks
-              </p>
-            </div>
-          </div>
+      <AppHeader
+        backHref={`/plans/${planId}`}
+        title="Task Management"
+        subtitle={`${plan.name} • Drag and drop to reorder tasks`}
+        showLogo={false}
+      >
+        {canEdit && (
           <Button
             onClick={handleAdd}
             variant="primary"
@@ -206,8 +212,8 @@ export default function PlanTasksPage() {
             <Plus className="w-4 h-4 mr-2" />
             New Task
           </Button>
-        </div>
-      </header>
+        )}
+      </AppHeader>
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-6 py-6">
@@ -289,6 +295,7 @@ export default function PlanTasksPage() {
                     }}
                     onDelete={deleteTask}
                     isSelected={task.id === selectedTaskId}
+                    readOnly={!canEdit}
                   />
                 ))
               )}

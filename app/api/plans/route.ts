@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth-server';
 import { prisma } from '@/lib/prisma';
 import { prismaPlanToPlan } from '@/lib/db-plan';
+import { getCurrentUserId, getAccessiblePlanIds } from '@/lib/plan-access';
 import type { InfrastructurePlan, PlansCollection } from '@/lib/types';
 
 function hasDatabase(): boolean {
@@ -20,13 +21,22 @@ export async function GET() {
   }
 
   try {
+    const userId = getCurrentUserId(session);
+    const planIds = await getAccessiblePlanIds(userId);
+
     const plans = await prisma.plan.findMany({
+      where: { id: { in: planIds } },
       orderBy: { updatedAt: 'desc' },
-      include: { tasks: true, milestones: true },
+      include: { tasks: true, milestones: true, members: true },
     });
 
     const collection: PlansCollection = {
-      plans: plans.map(prismaPlanToPlan),
+      plans: plans.map((p) => {
+        const plan = prismaPlanToPlan(p);
+        const role =
+          p.ownerId === userId ? 'OWNER' : p.members.find((m) => m.userId === userId)?.role ?? null;
+        return { ...plan, currentUserRole: role ?? undefined };
+      }),
       activePlanId: null,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -54,6 +64,9 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const userId = getCurrentUserId(session);
+    if (!userId) return NextResponse.json({ error: 'User not found' }, { status: 403 });
+
     const body = (await request.json()) as Omit<InfrastructurePlan, 'id' | 'createdAt' | 'updatedAt'> & { id?: string };
     const { name, description, startDate, endDate, tasks = [], milestones = [] } = body;
 
@@ -70,6 +83,7 @@ export async function POST(request: NextRequest) {
         description: description ?? null,
         startDate: new Date(startDate),
         endDate: new Date(endDate),
+        ownerId: userId,
         tasks: {
           create: tasks.map((t) => ({
             id: t.id,
@@ -95,6 +109,9 @@ export async function POST(request: NextRequest) {
             date: new Date(m.date),
             description: m.description ?? null,
           })),
+        },
+        members: {
+          create: { userId, role: 'OWNER' },
         },
       },
       include: { tasks: true, milestones: true },

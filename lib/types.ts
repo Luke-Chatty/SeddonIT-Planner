@@ -39,8 +39,14 @@ export interface InfrastructurePlan {
   updatedAt: string;
 }
 
+export type PlanRole = 'OWNER' | 'EDITOR' | 'VIEWER';
+
+export interface PlanWithRole extends InfrastructurePlan {
+  currentUserRole?: PlanRole;
+}
+
 export interface PlansCollection {
-  plans: InfrastructurePlan[];
+  plans: PlanWithRole[];
   activePlanId: string | null;
   createdAt: string;
   updatedAt: string;

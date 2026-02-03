@@ -13,7 +13,8 @@ interface TaskListProps {
 }
 
 export function TaskList({ onEditTask }: TaskListProps) {
-  const { plan, selectedTaskId, setSelectedTask, deleteTask } = usePlanStore();
+  const { plan, planRole, selectedTaskId, setSelectedTask, deleteTask } = usePlanStore();
+  const readOnly = planRole === 'VIEWER';
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
 
@@ -95,6 +96,7 @@ export function TaskList({ onEditTask }: TaskListProps) {
               onEdit={handleEdit}
               onDelete={deleteTask}
               isSelected={task.id === selectedTaskId}
+              readOnly={readOnly}
             />
           ))
         )}

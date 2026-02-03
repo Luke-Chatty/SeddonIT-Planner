@@ -9,14 +9,17 @@ import { Button } from '../UI/Button';
 import { RichTextEditor } from '../UI/RichTextEditor';
 import { usePlanStore } from '@/lib/store';
 import { Calendar, CheckCircle2, AlertCircle, Clock, Save, X, User } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface TaskFormProps {
   task?: Task | null;
   onClose: () => void;
   onSave: () => void;
+  /** When true, show as view-only (viewer role). No save, all fields disabled. */
+  readOnly?: boolean;
 }
 
-export function TaskForm({ task, onClose, onSave }: TaskFormProps) {
+export function TaskForm({ task, onClose, onSave, readOnly = false }: TaskFormProps) {
   const { addTask, updateTask, plan } = usePlanStore();
   const [formData, setFormData] = useState({
     title: '',
@@ -76,7 +79,7 @@ export function TaskForm({ task, onClose, onSave }: TaskFormProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
+    if (readOnly) return;
     if (!validate()) return;
 
     // Calculate order if not provided
@@ -124,15 +127,24 @@ export function TaskForm({ task, onClose, onSave }: TaskFormProps) {
             required
             className="text-lg font-bold"
             placeholder="Enter task title..."
+            disabled={readOnly}
           />
         </div>
         <div className="flex items-center gap-3 mt-4 md:mt-0">
-          <Button type="button" variant="secondary" onClick={onClose} className="gap-2">
-            <X className="w-4 h-4" /> Cancel
-          </Button>
-          <Button type="submit" variant="primary" className="gap-2 bg-brand-navy hover:bg-brand-navy/90 text-white">
-            <Save className="w-4 h-4" /> {task ? 'Save Changes' : 'Create Task'}
-          </Button>
+          {readOnly ? (
+            <Button type="button" variant="secondary" onClick={onClose} className="gap-2">
+              <X className="w-4 h-4" /> Close
+            </Button>
+          ) : (
+            <>
+              <Button type="button" variant="secondary" onClick={onClose} className="gap-2">
+                <X className="w-4 h-4" /> Cancel
+              </Button>
+              <Button type="submit" variant="primary" className="gap-2 bg-brand-navy hover:bg-brand-navy/90 text-white">
+                <Save className="w-4 h-4" /> {task ? 'Save Changes' : 'Create Task'}
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
@@ -153,6 +165,7 @@ export function TaskForm({ task, onClose, onSave }: TaskFormProps) {
                 onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
                 error={errors.startDate}
                 required
+                disabled={readOnly}
               />
               <Input
                 label="End Date"
@@ -161,6 +174,7 @@ export function TaskForm({ task, onClose, onSave }: TaskFormProps) {
                 onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
                 error={errors.endDate}
                 required
+                disabled={readOnly}
               />
             </div>
           </div>
@@ -180,6 +194,7 @@ export function TaskForm({ task, onClose, onSave }: TaskFormProps) {
                   { value: 'completed', label: 'Completed' },
                   { value: 'blocked', label: 'Blocked' },
                 ]}
+                disabled={readOnly}
               />
               <Select
                 label="Priority"
@@ -191,6 +206,7 @@ export function TaskForm({ task, onClose, onSave }: TaskFormProps) {
                   { value: 'high', label: 'High' },
                   { value: 'critical', label: 'Critical' },
                 ]}
+                disabled={readOnly}
               />
             </div>
           </div>
@@ -204,6 +220,7 @@ export function TaskForm({ task, onClose, onSave }: TaskFormProps) {
               value={formData.assignedTo}
               onChange={(e) => setFormData({ ...formData, assignedTo: e.target.value })}
               placeholder="Team or person name"
+              disabled={readOnly}
             />
           </div>
 
@@ -215,6 +232,7 @@ export function TaskForm({ task, onClose, onSave }: TaskFormProps) {
               rows={4}
               placeholder="Short summary of the task..."
               className="resize-none"
+              disabled={readOnly}
             />
           </div>
 
@@ -223,7 +241,7 @@ export function TaskForm({ task, onClose, onSave }: TaskFormProps) {
               <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Dependencies</h3>
               <div className="space-y-2 max-h-48 overflow-y-auto border border-border rounded-lg p-2 bg-muted/10 custom-scrollbar">
                 {availableTasks.map((t) => (
-                  <label key={t.id} className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 p-2 rounded transition-colors">
+                  <label key={t.id} className={cn('flex items-center gap-2 p-2 rounded transition-colors', !readOnly && 'cursor-pointer hover:bg-muted/50')}>
                     <input
                       type="checkbox"
                       checked={formData.dependencies.includes(t.id)}
@@ -241,6 +259,7 @@ export function TaskForm({ task, onClose, onSave }: TaskFormProps) {
                         }
                       }}
                       className="rounded border-brand-cyan text-brand-navy focus:ring-brand-cyan h-4 w-4"
+                      disabled={readOnly}
                     />
                     <span className="text-sm text-foreground font-medium">{t.title}</span>
                   </label>
@@ -255,7 +274,7 @@ export function TaskForm({ task, onClose, onSave }: TaskFormProps) {
           <label className="block text-sm font-bold text-foreground mb-4 uppercase tracking-widest flex items-center gap-2">
             <AlertCircle className="w-4 h-4" /> Detailed Scope of Works
           </label>
-          <div className="flex-1 border border-border rounded-xl overflow-hidden bg-white dark:bg-slate-900 shadow-sm flex flex-col">
+          <div className={cn('flex-1 border border-border rounded-xl overflow-hidden bg-white dark:bg-slate-900 shadow-sm flex flex-col', readOnly && 'pointer-events-none opacity-90')}>
             <RichTextEditor
               content={formData.scopeOfWorks}
               onChange={(content) => setFormData({ ...formData, scopeOfWorks: content })}

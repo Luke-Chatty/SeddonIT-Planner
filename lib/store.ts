@@ -1,11 +1,12 @@
 import { create } from 'zustand';
-import { InfrastructurePlan, Task, Milestone } from './types';
+import { InfrastructurePlan, Task, Milestone, type PlanRole } from './types';
 import { savePlanToStorage, loadPlanFromStorage, generateTaskId, generateMilestoneId } from './storage';
 import { getUseDatabase, fetchPlan, updatePlan as updatePlanApi } from './api';
 
 interface PlanStore {
   plan: InfrastructurePlan | null;
   planId: string | null;
+  planRole: PlanRole | null;
   selectedTaskId: string | null;
   isLoading: boolean;
   
@@ -38,6 +39,7 @@ const defaultPlan = (planId: string): InfrastructurePlan => ({
 export const usePlanStore = create<PlanStore>((set, get) => ({
   plan: null,
   planId: null,
+  planRole: null,
   selectedTaskId: null,
   isLoading: true,
 
@@ -46,6 +48,7 @@ export const usePlanStore = create<PlanStore>((set, get) => ({
       set({
         plan: defaultPlan(planId),
         planId,
+        planRole: null,
         isLoading: false,
       });
       return;
@@ -69,20 +72,23 @@ export const usePlanStore = create<PlanStore>((set, get) => ({
     if (getUseDatabase()) {
       fetchPlan(planId)
         .then((fetched) => {
-          const plan = fetched ? normalizePlan(fetched) : defaultPlan(planId);
-          set({ plan, planId, isLoading: false });
+          const role = fetched?.currentUserRole ?? null;
+          const planData = fetched
+            ? { id: fetched.id, name: fetched.name, description: fetched.description, startDate: fetched.startDate, endDate: fetched.endDate, tasks: fetched.tasks, milestones: fetched.milestones, createdAt: fetched.createdAt, updatedAt: fetched.updatedAt }
+            : null;
+          // 404 or no access: show nothing so UI can display "Plan not found or access denied"
+          const plan = planData ? normalizePlan(planData) : null;
+          set({ plan, planId, planRole: role, isLoading: false });
         })
         .catch(() => {
-          const stored = loadPlanFromStorage(planId);
-          const plan = stored ? normalizePlan(stored) : defaultPlan(planId);
-          set({ plan, planId, isLoading: false });
+          set({ plan: null, planId, planRole: null, isLoading: false });
         });
       return;
     }
 
     const stored = loadPlanFromStorage(planId);
     const plan = stored ? normalizePlan(stored) : defaultPlan(planId);
-    set({ plan, planId, isLoading: false });
+    set({ plan, planId, planRole: null, isLoading: false });
   },
 
   savePlan: () => {

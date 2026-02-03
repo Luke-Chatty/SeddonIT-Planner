@@ -12,6 +12,8 @@ interface TaskCardProps {
   onEdit: (task: Task) => void;
   onDelete: (taskId: string) => void;
   isSelected?: boolean;
+  /** When true, hide Edit/Delete (viewer role). */
+  readOnly?: boolean;
 }
 
 export function TaskCard({
@@ -21,6 +23,7 @@ export function TaskCard({
   onEdit,
   onDelete,
   isSelected = false,
+  readOnly = false,
 }: TaskCardProps) {
   const getStatusGradient = (status: Task['status']) => {
     switch (status) {
@@ -80,32 +83,34 @@ export function TaskCard({
             </p>
           )}
         </div>
-        <div className="flex gap-1 ml-2 flex-shrink-0">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit(task);
-            }}
-            className="h-9 w-9 p-0 hover:bg-blue-100 dark:hover:bg-blue-900/30"
-          >
-            <Edit2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (confirm('Are you sure you want to delete this task?')) {
-                onDelete(task.id);
-              }
-            }}
-            className="h-9 w-9 p-0 hover:bg-red-100 dark:hover:bg-red-900/30"
-          >
-            <Trash2 className="w-4 h-4 text-red-600 dark:text-red-400" />
-          </Button>
-        </div>
+        {!readOnly && (
+          <div className="flex gap-1 ml-2 flex-shrink-0">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(task);
+              }}
+              className="h-9 w-9 p-0 hover:bg-blue-100 dark:hover:bg-blue-900/30"
+            >
+              <Edit2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (confirm('Are you sure you want to delete this task?')) {
+                  onDelete(task.id);
+                }
+              }}
+              className="h-9 w-9 p-0 hover:bg-red-100 dark:hover:bg-red-900/30"
+            >
+              <Trash2 className="w-4 h-4 text-red-600 dark:text-red-400" />
+            </Button>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-wrap items-center gap-2 mb-3">
