@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/components/UI/Button";
+import { Input } from "@/components/UI/Input";
 import { ChevronLeft, Lock, Mail, ShieldAlert } from "lucide-react";
 import Image from "next/image";
 
