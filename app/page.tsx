@@ -141,9 +141,10 @@ export default function PlansPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
-      {/* Background Decoration */}
-      <div className="fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-100/50 via-background to-background dark:from-blue-900/20 dark:via-background dark:to-background pointer-events-none" />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 dark:from-[#001524] dark:via-[#022943]/20 dark:to-[#001524] text-foreground transition-colors duration-300">
+      {/* Background grain / subtle glow - matches login */}
+      <div className="fixed inset-0 -z-10 bg-[url('/grain.png')] opacity-[0.03] pointer-events-none" />
+      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#022943]/5 dark:bg-blue-500/10 blur-[120px] rounded-full pointer-events-none -z-10" />
 
       <AppHeader
         title="Seddon IT Plans"
@@ -162,7 +163,7 @@ export default function PlansPage() {
           variant="primary"
           size="sm"
           onClick={() => setIsCreateModalOpen(true)}
-          className="shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-shadow"
+          className="rounded-xl shadow-lg shadow-[#022943]/20 hover:shadow-[#022943]/30 transition-shadow"
         >
           <Plus className="w-4 h-4 mr-2" />
           New Plan
@@ -172,8 +173,14 @@ export default function PlansPage() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-6 py-12">
         <div className="mb-8">
-          <h2 className="text-3xl font-bold tracking-tight mb-2">My Plans</h2>
-          <p className="text-muted-foreground text-lg">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="h-1 w-8 bg-[#ed1c24] rounded-full" />
+            <h2 className="text-3xl font-extrabold text-[#022943] dark:text-white tracking-tight">
+              My Plans
+            </h2>
+            <div className="h-1 w-8 bg-[#ed1c24] rounded-full" />
+          </div>
+          <p className="text-slate-600 dark:text-slate-400 text-lg">
             Manage and track your infrastructure milestones.
           </p>
           {storageMode === 'local' && (
@@ -190,21 +197,21 @@ export default function PlansPage() {
         </div>
 
         {collection.plans.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 text-center rounded-3xl border border-dashed border-border bg-card/50">
-            <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-6 animate-in slide-in-from-bottom-4">
-              <Calendar className="w-10 h-10 text-primary" />
+          <div className="flex flex-col items-center justify-center py-24 text-center rounded-[20px] border border-dashed border-slate-200 dark:border-white/10 bg-white/80 dark:bg-[#022943]/50 shadow-[0_20px_50px_rgba(0,0,0,0.08)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.2)]">
+            <div className="w-20 h-20 rounded-full bg-[#022943]/10 dark:bg-[#4ebec7]/20 flex items-center justify-center mb-6 animate-in slide-in-from-bottom-4">
+              <Calendar className="w-10 h-10 text-[#022943] dark:text-[#4ebec7]" />
             </div>
-            <h2 className="text-2xl font-bold mb-2">
+            <h2 className="text-2xl font-extrabold text-[#022943] dark:text-white mb-2">
               No plans yet
             </h2>
-            <p className="text-muted-foreground mb-8 max-w-md">
+            <p className="text-slate-600 dark:text-slate-400 mb-8 max-w-md">
               Create your first infrastructure plan to get started with planning and visualization.
             </p>
             <Button
               onClick={() => setIsCreateModalOpen(true)}
               variant="primary"
               size="lg"
-              className="shadow-xl shadow-primary/20"
+              className="rounded-xl shadow-lg shadow-[#022943]/20 hover:shadow-[#022943]/30 transition-shadow"
             >
               <Plus className="w-5 h-5 mr-2" />
               Create Your First Plan
@@ -226,15 +233,15 @@ export default function PlansPage() {
               return (
                 <div
                   key={plan.id}
-                  className="group relative bg-card text-card-foreground rounded-2xl border border-border/50 p-6 shadow-sm hover:shadow-xl hover:border-primary/20 transition-all duration-300 hover:-translate-y-1"
+                  className="group relative bg-white dark:bg-[#022943] text-[#022943] dark:text-white rounded-[20px] border border-slate-200 dark:border-white/10 p-6 shadow-[0_20px_50px_rgba(0,0,0,0.08)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.2)] hover:shadow-[0_24px_60px_rgba(0,0,0,0.12)] dark:hover:shadow-[0_24px_60px_rgba(0,0,0,0.35)] hover:border-[#ed1c24]/20 transition-all duration-300 hover:-translate-y-1"
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1 min-w-0 pr-4">
-                      <h3 className="text-xl font-bold mb-1 truncate group-hover:text-primary transition-colors">
+                      <h3 className="text-xl font-bold mb-1 truncate text-[#022943] dark:text-white group-hover:text-[#ed1c24] dark:group-hover:text-[#4ebec7] transition-colors">
                         {plan.name}
                       </h3>
-                      <p className="text-sm text-muted-foreground line-clamp-2 min-h-[2.5rem]">
+                      <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2 min-h-[2.5rem]">
                         {plan.description || "No description provided."}
                       </p>
                     </div>
@@ -244,7 +251,7 @@ export default function PlansPage() {
                           variant="ghost"
                           size="sm"
                           onClick={() => setSharePlanId(plan.id)}
-                          className="h-8 px-2 hover:text-primary hover:bg-primary/10 gap-1.5"
+                          className="h-8 px-2 rounded-xl hover:text-[#ed1c24] dark:hover:text-[#4ebec7] hover:bg-[#ed1c24]/10 dark:hover:bg-[#4ebec7]/10 gap-1.5"
                           title="Share this plan with others"
                         >
                           <Share2 className="w-4 h-4" />
@@ -256,7 +263,7 @@ export default function PlansPage() {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleEditPlan(plan)}
-                          className="h-8 w-8 p-0 hover:text-primary hover:bg-primary/10"
+                          className="h-8 w-8 p-0 rounded-xl hover:text-[#ed1c24] dark:hover:text-[#4ebec7] hover:bg-[#ed1c24]/10 dark:hover:bg-[#4ebec7]/10"
                         >
                           <Edit2 className="w-4 h-4" />
                         </Button>
@@ -275,44 +282,44 @@ export default function PlansPage() {
                   </div>
 
                   {/* Progress Bar */}
-                  <div className="w-full bg-secondary h-2 rounded-full mb-4 overflow-hidden">
+                  <div className="w-full bg-slate-200 dark:bg-white/10 h-2 rounded-full mb-4 overflow-hidden">
                     <div
-                      className="bg-primary h-full rounded-full transition-all duration-500"
+                      className="bg-[#ed1c24] dark:bg-[#4ebec7] h-full rounded-full transition-all duration-500"
                       style={{ width: `${completionRate}%` }}
                     />
                   </div>
 
                   <div className="space-y-3 mb-6">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                      <span className="text-slate-600 dark:text-slate-400 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-[#022943] dark:bg-[#4ebec7]"></span>
                         Tasks
                       </span>
-                      <span className="font-medium">{taskCount}</span>
+                      <span className="font-medium text-[#022943] dark:text-white">{taskCount}</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                      <span className="text-slate-600 dark:text-slate-400 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-[#30b996]"></span>
                         Completed
                       </span>
-                      <span className="font-medium">{completionRate}%</span>
+                      <span className="font-medium text-[#022943] dark:text-white">{completionRate}%</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+                      <span className="text-slate-600 dark:text-slate-400 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-[#804097]"></span>
                         Timeline
                       </span>
-                      <span className="font-medium text-xs">
+                      <span className="font-medium text-[#022943] dark:text-white text-xs">
                         {formatDate(plan.startDate)} - {formatDate(plan.endDate)}
                       </span>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 pt-4 border-t border-border">
+                  <div className="flex items-center gap-3 pt-4 border-t border-slate-200 dark:border-white/10">
                     <Button
                       onClick={() => handleOpenPlan(plan.id)}
                       variant="primary"
-                      className="flex-1 shadow-lg shadow-primary/20"
+                      className="flex-1 rounded-xl shadow-lg shadow-[#022943]/20 hover:shadow-[#022943]/30 transition-shadow"
                     >
                       Open Plan
                       <ArrowRight className="w-4 h-4 ml-2" />

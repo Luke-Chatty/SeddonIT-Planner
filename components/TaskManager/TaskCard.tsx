@@ -137,8 +137,7 @@ export function TaskCard({
         {task.dependencies.length > 0 && (
           <span className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 border border-amber-200/50 dark:border-amber-800/50">
             <AlertCircle className="w-3.5 h-3.5" />
-            {task.dependencies.length} dependency
-            {task.dependencies.length !== 1 ? 'ies' : 'y'}
+            {task.dependencies.length} {task.dependencies.length === 1 ? 'dependency' : 'dependencies'}
           </span>
         )}
       </div>

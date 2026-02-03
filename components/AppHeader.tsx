@@ -54,58 +54,62 @@ export function AppHeader({ backHref, title, subtitle, showLogo = true, children
   const initials = getInitials(session?.user?.name, session?.user?.email);
 
   return (
-    <header className="sticky top-0 z-50 glass border-b border-border/40">
+    <header className="sticky top-0 z-50 bg-white/95 dark:bg-[#022943]/95 backdrop-blur-xl border-b border-slate-200 dark:border-white/10 shadow-sm">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-        <div className="flex items-center gap-3 min-w-0 flex-1">
+        <div className="flex items-center gap-4 min-w-0 flex-1">
           {backHref != null && (
             <Button
               variant="ghost"
               size="sm"
               onClick={() => router.push(backHref)}
-              className="p-2 flex-shrink-0"
+              className="p-2 flex-shrink-0 rounded-xl hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300"
               aria-label="Go back"
             >
               <ArrowLeft className="w-5 h-5" />
             </Button>
           )}
           {showLogo && (
-            <div className="p-2 bg-primary/10 rounded-lg flex-shrink-0">
-              <Layout className="w-6 h-6 text-primary" />
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <div className="h-1 w-6 bg-[#ed1c24] rounded-full hidden sm:block" />
+              <div className="p-2.5 bg-[#022943]/10 dark:bg-white/10 rounded-xl flex-shrink-0">
+                <Layout className="w-5 h-5 text-[#022943] dark:text-[#4ebec7]" />
+              </div>
+              <div className="h-1 w-6 bg-[#ed1c24] rounded-full hidden sm:block" />
             </div>
           )}
           <div className="min-w-0">
-            <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-600 dark:to-blue-400 truncate">
+            <h1 className="text-xl font-extrabold text-[#022943] dark:text-white truncate tracking-tight">
               {title}
             </h1>
             {subtitle != null && subtitle !== '' && (
-              <p className="text-xs text-muted-foreground truncate max-w-md">{subtitle}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-md mt-0.5">{subtitle}</p>
             )}
           </div>
         </div>
 
-        <div className="flex items-center gap-3 flex-shrink-0">
+        <div className="flex items-center gap-2 flex-shrink-0">
           {children}
           {children != null && (
-            <div className="w-px h-6 bg-border mx-1" />
+            <div className="w-px h-8 bg-slate-200 dark:bg-white/20 mx-1" />
           )}
           <div className="flex items-center gap-2">
             {status === 'authenticated' && (
-              <div className="hidden sm:flex items-center gap-2 min-w-0 max-w-[180px]">
+              <div className="hidden sm:flex items-center gap-3 min-w-0 max-w-[200px] pl-2">
                 {session?.user?.image ? (
                   <img
                     src={session.user.image}
                     alt=""
-                    className="h-8 w-8 rounded-full object-cover ring-2 ring-border flex-shrink-0"
+                    className="h-9 w-9 rounded-full object-cover ring-2 ring-slate-200 dark:ring-white/20 flex-shrink-0"
                   />
                 ) : (
                   <div
-                    className="h-8 w-8 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs font-semibold flex-shrink-0"
+                    className="h-9 w-9 rounded-full bg-[#022943]/15 dark:bg-[#4ebec7]/20 text-[#022943] dark:text-[#4ebec7] flex items-center justify-center text-sm font-bold flex-shrink-0"
                     aria-hidden
                   >
                     {initials}
                   </div>
                 )}
-                <span className="text-sm font-medium text-foreground truncate" title={session?.user?.email ?? undefined}>
+                <span className="text-sm font-semibold text-[#022943] dark:text-white truncate" title={session?.user?.email ?? undefined}>
                   {displayName}
                 </span>
               </div>
@@ -114,7 +118,7 @@ export function AppHeader({ backHref, title, subtitle, showLogo = true, children
               variant="ghost"
               size="sm"
               onClick={() => setIsDarkMode((d) => !d)}
-              className="w-9 h-9 p-0 rounded-full"
+              className="w-9 h-9 p-0 rounded-xl hover:bg-slate-100 dark:hover:bg-white/10"
               aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
             >
               {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
@@ -123,7 +127,7 @@ export function AppHeader({ backHref, title, subtitle, showLogo = true, children
               variant="ghost"
               size="sm"
               onClick={() => signOut({ callbackUrl: '/auth/signin' })}
-              className="w-9 h-9 p-0"
+              className="w-9 h-9 p-0 rounded-xl hover:bg-slate-100 dark:hover:bg-red-500/10 hover:text-[#ed1c24] dark:hover:text-[#ed1c24]"
               title="Sign out"
               aria-label="Sign out"
             >
@@ -131,6 +135,15 @@ export function AppHeader({ backHref, title, subtitle, showLogo = true, children
             </Button>
           </div>
         </div>
+      </div>
+      {/* Seddon accent stripe - matches login card */}
+      <div className="h-2.5 w-full flex">
+        <div className="flex-1 bg-[#30b996]" />
+        <div className="flex-1 bg-[#e8bf1e]" />
+        <div className="flex-1 bg-[#804097]" />
+        <div className="flex-1 bg-[#4ebec7]" />
+        <div className="flex-1 bg-[#ce167c]" />
+        <div className="flex-1 bg-[#f58720]" />
       </div>
     </header>
   );
