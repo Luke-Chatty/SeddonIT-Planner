@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getSession } from '@/lib/auth-server';
 import { prisma } from '@/lib/prisma';
 import { prismaPlanToPlan } from '@/lib/db-plan';
 import type { InfrastructurePlan, PlansCollection } from '@/lib/types';
@@ -8,6 +9,9 @@ function hasDatabase(): boolean {
 }
 
 export async function GET() {
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
   if (!hasDatabase()) {
     return NextResponse.json(
       { error: 'Database not configured', plans: [], activePlanId: null },
@@ -39,6 +43,9 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
   if (!hasDatabase()) {
     return NextResponse.json(
       { error: 'Database not configured' },

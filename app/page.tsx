@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSession, signOut } from 'next-auth/react';
 import { usePlansStore } from '@/lib/plansStore';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/UI/Button';
@@ -18,6 +19,7 @@ import {
   Moon,
   Sun,
   Layout,
+  LogOut,
 } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 import { exportPlanToFile, importPlanFromFile } from '@/lib/storage';
@@ -25,6 +27,7 @@ import { InfrastructurePlan } from '@/lib/types';
 
 export default function PlansPage() {
   const router = useRouter();
+  const { data: session, status } = useSession();
   const { collection, loadPlans, addPlan, deletePlan, updatePlan, setActivePlan } = usePlansStore();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -140,12 +143,12 @@ export default function PlansPage() {
     }
   };
 
-  if (!collection) {
+  if (status === 'loading' || !collection) {
     return (
       <div className="h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-lg text-muted-foreground">Loading plans...</p>
+          <p className="text-lg text-muted-foreground">{status === 'loading' ? 'Signing in…' : 'Loading plans...'}</p>
         </div>
       </div>
     );
@@ -189,6 +192,9 @@ export default function PlansPage() {
               New Plan
             </Button>
             <div className="w-px h-6 bg-border mx-1" />
+            <span className="text-sm text-muted-foreground hidden sm:inline truncate max-w-[120px]">
+              {session?.user?.email ?? session?.user?.name ?? ''}
+            </span>
             <Button
               variant="ghost"
               size="sm"
@@ -200,6 +206,14 @@ export default function PlansPage() {
               ) : (
                 <Moon className="w-4 h-4" />
               )}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => signOut({ callbackUrl: '/auth/signin' })}
+              title="Sign out"
+            >
+              <LogOut className="w-4 h-4" />
             </Button>
           </div>
         </div>
