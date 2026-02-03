@@ -50,10 +50,11 @@ When deployed (e.g. on [Dokploy](https://dokploy.com)), you can store plans in P
    ```bash
    DATABASE_URL="postgresql://USER:PASSWORD@HOST:5432/DATABASE?schema=public"
    ```
-3. Run migrations once (e.g. in Dokploy run a one-off job or pre-start command):
+3. Run migrations once (e.g. in Dokploy run a one-off job or shell). **Inside the app container** the schema lives in `/app`, so run:
    ```bash
-   npx prisma migrate deploy
+   docker exec -w /app <app-container-name> npx prisma migrate deploy
    ```
+   Or from a shell already in the container: `cd /app && npx prisma migrate deploy`
 4. Restart the app. The app will use the database when `DATABASE_URL` is set; otherwise it falls back to localStorage.
 
 See `.env.example` for a template. No code changes are required—the app detects the database automatically.
