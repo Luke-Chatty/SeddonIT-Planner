@@ -15,6 +15,8 @@ interface AppHeaderProps {
   subtitle?: string;
   /** Optional icon - default is Layout. Pass null to hide. */
   showLogo?: boolean;
+  /** When true, show branded "Seddon IT Planner" wordmark with red accent instead of plain title. */
+  brandTitle?: boolean;
   /** Right-side content (e.g. Import, New Plan, Share, QuickActions). */
   children?: React.ReactNode;
 }
@@ -29,7 +31,7 @@ function getInitials(name: string | null | undefined, email: string | null | und
   return '?';
 }
 
-export function AppHeader({ backHref, title, subtitle, showLogo = true, children }: AppHeaderProps) {
+export function AppHeader({ backHref, title, subtitle, showLogo = true, brandTitle = false, children }: AppHeaderProps) {
   const router = useRouter();
   const { data: session, status } = useSession();
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -55,7 +57,7 @@ export function AppHeader({ backHref, title, subtitle, showLogo = true, children
 
   return (
     <header className="sticky top-0 z-50 bg-white/95 dark:bg-[#022943]/95 backdrop-blur-xl border-b border-slate-200 dark:border-white/10 shadow-sm">
-      <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-6 min-h-[96px] py-3 flex items-center justify-between">
         <div className="flex items-center gap-4 min-w-0 flex-1">
           {backHref != null && (
             <Button
@@ -69,14 +71,22 @@ export function AppHeader({ backHref, title, subtitle, showLogo = true, children
             </Button>
           )}
           {showLogo && (
-            <div className="p-2.5 bg-slate-100 dark:bg-white/10 rounded-xl flex-shrink-0">
+            <div className="p-2.5 bg-[#022943]/10 dark:bg-white/10 rounded-xl flex-shrink-0">
               <Layout className="w-5 h-5 text-[#022943] dark:text-[#4ebec7]" />
             </div>
           )}
           <div className="min-w-0">
-            <h1 className="text-xl font-extrabold text-[#022943] dark:text-white truncate tracking-tight">
-              {title}
-            </h1>
+            {brandTitle ? (
+              <h1 className="flex items-baseline gap-2 flex-wrap" title={title}>
+                <span className="text-xl font-extrabold text-[#022943] dark:text-white tracking-tight">Seddon</span>
+                <span className="text-xl font-extrabold text-[#022943] dark:text-white tracking-tight">IT</span>
+                <span className="text-xl font-extrabold text-[#ed1c24] tracking-tight">Planner</span>
+              </h1>
+            ) : (
+              <h1 className="text-xl font-extrabold text-[#022943] dark:text-white truncate tracking-tight">
+                {title}
+              </h1>
+            )}
             {subtitle != null && subtitle !== '' && (
               <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-md mt-0.5">{subtitle}</p>
             )}
@@ -95,11 +105,13 @@ export function AppHeader({ backHref, title, subtitle, showLogo = true, children
                   <img
                     src={session.user.image}
                     alt=""
-                    className="h-9 w-9 rounded-full object-cover ring-2 ring-slate-200 dark:ring-white/20 flex-shrink-0"
+                    width={96}
+                    height={96}
+                    className="h-24 w-24 rounded-full object-cover ring-2 ring-slate-200 dark:ring-white/20 flex-shrink-0"
                   />
                 ) : (
                   <div
-                    className="h-9 w-9 rounded-full bg-[#022943]/15 dark:bg-[#4ebec7]/20 text-[#022943] dark:text-[#4ebec7] flex items-center justify-center text-sm font-bold flex-shrink-0"
+                    className="h-24 w-24 rounded-full bg-[#022943]/15 dark:bg-[#4ebec7]/20 text-[#022943] dark:text-[#4ebec7] flex items-center justify-center text-lg font-bold flex-shrink-0"
                     aria-hidden
                   >
                     {initials}

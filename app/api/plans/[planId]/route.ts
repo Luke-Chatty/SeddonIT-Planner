@@ -70,6 +70,14 @@ export async function PUT(
   const userId = getCurrentUserId(session);
 
   try {
+    const existing = await prisma.plan.findUnique({
+      where: { id: planId },
+      select: { ownerId: true },
+    });
+    if (!existing) {
+      return NextResponse.json({ error: 'Plan not found' }, { status: 404 });
+    }
+
     const access = await getPlanAccess(planId, userId);
     if (!access?.canEdit) {
       return NextResponse.json({ error: 'You do not have permission to edit this plan' }, { status: 403 });
@@ -84,6 +92,8 @@ export async function PUT(
       );
     }
 
+    const claimOwnership = existing.ownerId == null && userId != null;
+
     await prisma.$transaction(async (tx) => {
       await tx.task.deleteMany({ where: { planId } });
       await tx.milestone.deleteMany({ where: { planId } });
@@ -91,6 +101,7 @@ export async function PUT(
       await tx.plan.update({
         where: { id: planId },
         data: {
+          ...(claimOwnership && { ownerId: userId }),
           name: body.name,
           description: body.description ?? null,
           startDate: new Date(body.startDate),

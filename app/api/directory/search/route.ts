@@ -37,7 +37,7 @@ async function searchGraphUsers(q: string): Promise<DirectoryUser[]> {
   const params = new URLSearchParams({
     $filter: filter,
     $select: 'id,displayName,mail',
-    $top: '20',
+    $top: '30',
   });
   const url = `https://graph.microsoft.com/v1.0/users?${params.toString()}`;
   const res = await fetch(url, {
@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
   if (hasAzureConfig) {
     users = await searchGraphUsers(q);
   }
-  if (users.length === 0) {
+  if (users.length === 0 && !hasAzureConfig) {
     users = await searchPrismaUsers(q);
   }
 

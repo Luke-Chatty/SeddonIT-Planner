@@ -156,8 +156,9 @@ export default function PlansPage() {
       <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#022943]/5 dark:bg-blue-500/10 blur-[120px] rounded-full pointer-events-none -z-10" />
 
       <AppHeader
-        title="Seddon IT Plans"
+        title="Seddon IT Planner"
         showLogo={true}
+        brandTitle={true}
       >
         <Button
           variant="ghost"
