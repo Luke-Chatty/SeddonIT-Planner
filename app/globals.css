@@ -99,10 +99,22 @@
 body {
   color: var(--foreground);
   background: var(--background);
-  /* Use the CSS variable if available, otherwise fallback */
   font-family: var(--font-inter), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+/* Project Workspace Manager–style body gradients */
+:root body {
+  background: radial-gradient(circle at 50% 0%, #f7f9fc 0%, #edf2f7 100%);
+  background-attachment: fixed;
+}
+
+.dark body {
+  background: radial-gradient(circle at 50% 0%, #03395d 0%, #022943 40%, #011523 100%);
+  background-attachment: fixed;
 }
 
 @layer utilities {
@@ -110,13 +122,51 @@ body {
     text-wrap: balance;
   }
 
-  /* Glassmorphism Utilities */
   .glass {
     @apply bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-slate-200/50 dark:border-slate-700/50;
   }
 
+  /* PWM-style glass cards and panels */
   .glass-card {
-    @apply bg-white/50 dark:bg-slate-900/50 backdrop-blur-lg border border-white/20 dark:border-slate-800/50 shadow-xl;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.05);
+  }
+
+  .dark .glass-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.2);
+  }
+
+  .glass-panel {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 8px 32px -2px rgba(0, 0, 0, 0.05);
+  }
+
+  .dark .glass-panel {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 32px -2px rgba(0, 0, 0, 0.2);
+  }
+
+  .premium-panel {
+    @apply rounded-2xl border transition-all duration-300 border-slate-200 bg-white/80 shadow-sm dark:border-white/10 dark:bg-black/20;
+  }
+
+  .glow-turquoise {
+    box-shadow: 0 0 20px rgba(48, 185, 150, 0.2);
+  }
+
+  .glow-primary {
+    box-shadow: 0 0 20px rgba(2, 41, 67, 0.2);
+  }
+
+  .font-display {
+    font-family: var(--font-rethink-sans, var(--font-inter)), sans-serif;
   }
 }
 
@@ -199,7 +249,26 @@ html {
   transition-duration: 150ms;
 }
 
-/* Custom scrollbar */
+/* Custom scrollbar (PWM-style turquoise accent) */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(48, 185, 150, 0.3);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(48, 185, 150, 0.5);
+}
+
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;

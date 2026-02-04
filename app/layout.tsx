@@ -1,12 +1,17 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google"; // Import Inter font
+import { Inter, Rethink_Sans } from "next/font/google";
 import { Providers } from "@/components/Providers";
 import "./globals.css";
 
-// Configure Inter font
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
+  display: "swap",
+});
+
+const rethinkSans = Rethink_Sans({
+  subsets: ["latin"],
+  variable: "--font-rethink-sans",
   display: "swap",
 });
 
@@ -22,7 +27,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.className} antialiased selection:bg-blue-500/30 selection:text-blue-900 dark:selection:bg-blue-500/30 dark:selection:text-blue-100`}>
+      <body
+        className={`${inter.variable} ${rethinkSans.variable} ${inter.className} antialiased selection:bg-[#30b996]/30 selection:text-[#022943] dark:selection:bg-[#30b996]/30 dark:selection:text-white font-sans min-h-screen transition-colors duration-300`}
+      >
         <Providers>{children}</Providers>
       </body>
     </html>

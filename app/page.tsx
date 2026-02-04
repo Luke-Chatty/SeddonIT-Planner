@@ -180,47 +180,62 @@ export default function PlansPage() {
         </Button>
       </AppHeader>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-6 py-12">
-        <div className="mb-8">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-[#ed1c24] text-3xl font-extrabold">|</span>
-            <h2 className="text-3xl font-extrabold text-[#022943] dark:text-white tracking-tight">
-              My Plans
-            </h2>
+      {/* Main Content - PWM-style layout */}
+      <main className="max-w-7xl mx-auto px-6 py-8 space-y-8">
+        <div className="relative overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10 p-6 md:p-8 glass-panel animate-in fade-in slide-in-from-bottom-4 duration-500 shadow-sm dark:shadow-none">
+          <div className="absolute top-0 right-0 -mt-16 -mr-16 w-64 h-64 bg-[#30b996]/10 blur-[80px] rounded-full pointer-events-none hidden dark:block" />
+          <div className="relative z-10 flex flex-col md:flex-row justify-between items-end gap-4 font-bold">
+            <div className="max-w-2xl">
+              <div className="flex items-center gap-4 mb-2">
+                <span className="h-10 w-1.5 bg-[#ed1c24] dark:bg-[#30b996] rounded-full shadow-[0_0_15px_rgba(237,28,36,0.3)] dark:shadow-[0_0_15px_rgba(48,185,150,0.3)]" />
+                <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-[#022943] dark:text-white font-display drop-shadow-sm">
+                  My Plans
+                </h2>
+              </div>
+              <p className="text-slate-600 dark:text-slate-400 font-medium max-w-xl text-lg leading-relaxed">
+                Manage and track your infrastructure milestones.
+              </p>
+            </div>
+            <div className="flex gap-3 flex-shrink-0">
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => setIsCreateModalOpen(true)}
+                className="rounded-xl shadow-lg shadow-[#022943]/20 hover:shadow-xl hover:shadow-[#022943]/30 hover:scale-[1.02] transition-all font-bold uppercase text-xs tracking-widest px-6 h-12"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                New Plan
+              </Button>
+            </div>
           </div>
-          <p className="text-slate-600 dark:text-slate-400 text-lg">
-            Manage and track your infrastructure milestones.
-          </p>
-          {storageMode === 'local' && (
-            <p className="mt-2 text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2 inline-block">
-              Saved to this device only. Set <code className="text-xs bg-amber-100 dark:bg-amber-900/40 px-1 rounded">DATABASE_URL</code> and run migrations to persist plans across reboots and share with others.{' '}
-              <a href="/api/health" target="_blank" rel="noopener noreferrer" className="underline font-medium">Check connection</a>
-            </p>
-          )}
-          {storageMode === 'database' && (
-            <p className="mt-2 text-sm text-green-600 dark:text-green-400">
-              Plans are saved to the database and persist across devices.
+          {(storageMode === 'local' || storageMode === 'database') && (
+            <p className="mt-4 text-sm text-slate-600 dark:text-slate-400 font-medium">
+              {storageMode === 'local' ? (
+                <>Saved to this device only. Set <code className="text-xs bg-slate-100 dark:bg-white/10 px-1.5 py-0.5 rounded">DATABASE_URL</code> and run migrations to persist and share.{' '}
+                  <a href="/api/health" target="_blank" rel="noopener noreferrer" className="text-[#022943] dark:text-[#4ebec7] underline font-semibold">Check connection</a></>
+              ) : (
+                'Plans are saved to the database and persist across devices.'
+              )}
             </p>
           )}
         </div>
 
         {collection.plans.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 text-center rounded-[20px] border border-dashed border-slate-200 dark:border-white/10 bg-white/80 dark:bg-[#022943]/50 shadow-[0_20px_50px_rgba(0,0,0,0.08)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.2)]">
-            <div className="w-20 h-20 rounded-full bg-[#022943]/10 dark:bg-[#4ebec7]/20 flex items-center justify-center mb-6 animate-in slide-in-from-bottom-4">
+          <div className="flex flex-col items-center justify-center py-24 text-center rounded-2xl border border-slate-200 dark:border-white/5 glass-panel overflow-hidden">
+            <div className="w-20 h-20 rounded-full bg-[#022943]/10 dark:bg-[#4ebec7]/20 flex items-center justify-center mb-6 animate-in slide-in-from-bottom-4 border border-slate-200 dark:border-white/10">
               <Calendar className="w-10 h-10 text-[#022943] dark:text-[#4ebec7]" />
             </div>
-            <h2 className="text-2xl font-extrabold text-[#022943] dark:text-white mb-2">
+            <h2 className="text-2xl font-extrabold text-[#022943] dark:text-white mb-2 font-display">
               No plans yet
             </h2>
-            <p className="text-slate-600 dark:text-slate-400 mb-8 max-w-md">
+            <p className="text-slate-600 dark:text-slate-400 mb-8 max-w-md font-medium">
               Create your first infrastructure plan to get started with planning and visualization.
             </p>
             <Button
               onClick={() => setIsCreateModalOpen(true)}
               variant="primary"
               size="lg"
-              className="rounded-xl shadow-lg shadow-[#022943]/20 hover:shadow-[#022943]/30 transition-shadow"
+              className="rounded-xl shadow-lg shadow-[#ed1c24]/20 hover:shadow-xl hover:shadow-[#ed1c24]/30 hover:scale-[1.02] transition-all font-bold uppercase text-xs tracking-widest bg-[#ed1c24] hover:bg-[#c1171d]"
             >
               <Plus className="w-5 h-5 mr-2" />
               Create Your First Plan
@@ -242,7 +257,7 @@ export default function PlansPage() {
               return (
                 <div
                   key={plan.id}
-                  className="group relative bg-white dark:bg-[#022943] text-[#022943] dark:text-white rounded-[20px] border border-slate-200 dark:border-white/10 p-6 shadow-[0_20px_50px_rgba(0,0,0,0.08)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.2)] hover:shadow-[0_24px_60px_rgba(0,0,0,0.12)] dark:hover:shadow-[0_24px_60px_rgba(0,0,0,0.35)] hover:border-[#ed1c24]/20 transition-all duration-300 hover:-translate-y-1"
+                  className="group relative glass-card rounded-2xl border border-slate-200 dark:border-white/5 p-6 hover:scale-[1.02] hover:shadow-xl transition-all duration-300 font-bold text-[#022943] dark:text-white"
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
                   <div className="flex items-start justify-between mb-4">
