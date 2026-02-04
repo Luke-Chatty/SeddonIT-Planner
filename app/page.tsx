@@ -183,11 +183,10 @@ export default function PlansPage() {
       <main className="max-w-7xl mx-auto px-6 py-12">
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-2">
-            <div className="h-1 w-8 bg-[#ed1c24] rounded-full" />
+            <span className="text-[#ed1c24] text-3xl font-extrabold">|</span>
             <h2 className="text-3xl font-extrabold text-[#022943] dark:text-white tracking-tight">
-              My Plan
+              My Plans
             </h2>
-            <div className="h-1 w-8 bg-[#ed1c24] rounded-full" />
           </div>
           <p className="text-slate-600 dark:text-slate-400 text-lg">
             Manage and track your infrastructure milestones.
