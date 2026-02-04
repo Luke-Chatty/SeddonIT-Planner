@@ -69,12 +69,8 @@ export function AppHeader({ backHref, title, subtitle, showLogo = true, children
             </Button>
           )}
           {showLogo && (
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <div className="h-1 w-6 bg-[#ed1c24] rounded-full hidden sm:block" />
-              <div className="p-2.5 bg-[#022943]/10 dark:bg-white/10 rounded-xl flex-shrink-0">
-                <Layout className="w-5 h-5 text-[#022943] dark:text-[#4ebec7]" />
-              </div>
-              <div className="h-1 w-6 bg-[#ed1c24] rounded-full hidden sm:block" />
+            <div className="p-2.5 bg-slate-100 dark:bg-white/10 rounded-xl flex-shrink-0">
+              <Layout className="w-5 h-5 text-[#022943] dark:text-[#4ebec7]" />
             </div>
           )}
           <div className="min-w-0">
@@ -135,15 +131,6 @@ export function AppHeader({ backHref, title, subtitle, showLogo = true, children
             </Button>
           </div>
         </div>
-      </div>
-      {/* Seddon accent stripe - matches login card */}
-      <div className="h-2.5 w-full flex">
-        <div className="flex-1 bg-[#30b996]" />
-        <div className="flex-1 bg-[#e8bf1e]" />
-        <div className="flex-1 bg-[#804097]" />
-        <div className="flex-1 bg-[#4ebec7]" />
-        <div className="flex-1 bg-[#ce167c]" />
-        <div className="flex-1 bg-[#f58720]" />
       </div>
     </header>
   );

@@ -1,10 +1,444 @@
 {
-  "name": "IT Infrastructure Plan 2026",
-  "description": "Comprehensive infrastructure planning for the next year",
+  "name": "2026 Infrastructure Programme - Expanded",
   "startDate": "2026-01-01T00:00:00.000Z",
-  "endDate": "2026-12-31T23:59:59.999Z",
-  "tasks": [],
-  "milestones": [],
-  "createdAt": "2026-01-27T00:00:00.000Z",
-  "updatedAt": "2026-01-27T00:00:00.000Z"
+  "endDate": "2026-09-30T23:59:59.999Z",
+
+  "tasks": [
+
+/* =====================================================
+PHASE 0 – PROCUREMENT & DESIGN
+===================================================== */
+
+{
+"id": "procurement-order-switches",
+"title": "Raise and order core and storage switches",
+"priority": "critical",
+"status": "not-started",
+"dependencies": [],
+"startDate": "2026-02-02T00:00:00.000Z",
+"endDate": "2026-02-06T23:59:59.999Z"
+},
+
+{
+"id": "procurement-order-optics",
+"title": "Order fibre optics, DACs and modules",
+"priority": "high",
+"status": "not-started",
+"dependencies": [],
+"startDate": "2026-02-02T00:00:00.000Z",
+"endDate": "2026-02-06T23:59:59.999Z"
+},
+
+{
+"id": "design-document-core-network",
+"title": "Document core stack network design",
+"priority": "critical",
+"status": "not-started",
+"dependencies": ["procurement-order-switches"],
+"startDate": "2026-02-07T00:00:00.000Z",
+"endDate": "2026-02-10T23:59:59.999Z"
+},
+
+{
+"id": "design-document-storage-network",
+"title": "Document storage switching design",
+"priority": "critical",
+"status": "not-started",
+"dependencies": ["procurement-order-switches"],
+"startDate": "2026-02-07T00:00:00.000Z",
+"endDate": "2026-02-10T23:59:59.999Z"
+},
+
+{
+"id": "horizon-third-party-review",
+"title": "Horizon architecture third party review",
+"priority": "high",
+"status": "not-started",
+"dependencies": ["design-document-core-network"],
+"startDate": "2026-02-16T00:00:00.000Z",
+"endDate": "2026-03-06T23:59:59.999Z"
+},
+
+/* =====================================================
+PHASE 1 – LEGACY REMOVAL (ORIGINAL PRESERVED)
+===================================================== */
+
+{
+"id": "phase1-backup-confirm",
+"title": "Confirm backups and archive workloads",
+"priority": "critical",
+"status": "not-started",
+"dependencies": [],
+"startDate": "2026-01-01T00:00:00.000Z",
+"endDate": "2026-01-05T23:59:59.999Z"
+},
+
+{
+"id": "phase1-remove-nas",
+"title": "Remove all four NAS units",
+"priority": "high",
+"status": "not-started",
+"dependencies": ["phase1-backup-confirm"],
+"startDate": "2026-01-06T00:00:00.000Z",
+"endDate": "2026-01-12T23:59:59.999Z"
+},
+
+{
+"id": "phase1-migrate-tegile-vms",
+"title": "Migrate or delete remaining VM copies on Tegile",
+"priority": "high",
+"status": "not-started",
+"dependencies": ["phase1-backup-confirm"],
+"startDate": "2026-01-06T00:00:00.000Z",
+"endDate": "2026-01-12T23:59:59.999Z"
+},
+
+{
+"id": "phase1-remove-tegile-volumes",
+"title": "Remove Tegile volumes from Hyper-V",
+"priority": "high",
+"status": "not-started",
+"dependencies": ["phase1-migrate-tegile-vms"],
+"startDate": "2026-01-13T00:00:00.000Z",
+"endDate": "2026-01-19T23:59:59.999Z"
+},
+
+{
+"id": "phase1-cleanup-vswitches",
+"title": "Clean up legacy vSwitches",
+"priority": "medium",
+"status": "not-started",
+"dependencies": ["phase1-remove-tegile-volumes"],
+"startDate": "2026-01-20T00:00:00.000Z",
+"endDate": "2026-01-24T23:59:59.999Z"
+},
+
+/* =====================================================
+PHASE 2 – CORE & STORAGE FABRIC DEPLOYMENT
+===================================================== */
+
+{
+"id": "phase2-install-core-stack",
+"title": "Install new core switching stack",
+"priority": "critical",
+"status": "not-started",
+"dependencies": [
+"phase1-cleanup-vswitches",
+"procurement-order-switches",
+"procurement-order-optics",
+"design-document-core-network"
+],
+"startDate": "2026-01-25T00:00:00.000Z",
+"endDate": "2026-02-07T23:59:59.999Z"
+},
+
+{
+"id": "phase2-install-storage-switching-stack",
+"title": "Install storage switching stack",
+"priority": "critical",
+"status": "not-started",
+"dependencies": [
+"phase2-install-core-stack",
+"design-document-storage-network"
+],
+"startDate": "2026-02-01T00:00:00.000Z",
+"endDate": "2026-02-07T23:59:59.999Z"
+},
+
+{
+"id": "phase2-configure-management-vlan",
+"title": "Configure Management VLAN",
+"priority": "critical",
+"status": "not-started",
+"dependencies": ["phase2-install-core-stack"],
+"startDate": "2026-02-08T00:00:00.000Z",
+"endDate": "2026-02-10T23:59:59.999Z"
+},
+
+{
+"id": "phase2-configure-server-vlan",
+"title": "Configure Server VLAN",
+"priority": "critical",
+"status": "not-started",
+"dependencies": ["phase2-install-core-stack"],
+"startDate": "2026-02-08T00:00:00.000Z",
+"endDate": "2026-02-10T23:59:59.999Z"
+},
+
+{
+"id": "phase2-configure-storage-vlan",
+"title": "Configure Storage VLAN",
+"priority": "critical",
+"status": "not-started",
+"dependencies": [
+"phase2-install-core-stack",
+"phase2-install-storage-switching-stack"
+],
+"startDate": "2026-02-08T00:00:00.000Z",
+"endDate": "2026-02-10T23:59:59.999Z"
+},
+
+{
+"id": "phase2-configure-vdi-vlan",
+"title": "Configure VDI VLAN",
+"priority": "critical",
+"status": "not-started",
+"dependencies": ["phase2-install-core-stack"],
+"startDate": "2026-02-08T00:00:00.000Z",
+"endDate": "2026-02-10T23:59:59.999Z"
+},
+
+{
+"id": "phase2-configure-cluster-vlan",
+"title": "Configure Cluster VLAN",
+"priority": "critical",
+"status": "not-started",
+"dependencies": ["phase2-install-core-stack"],
+"startDate": "2026-02-08T00:00:00.000Z",
+"endDate": "2026-02-10T23:59:59.999Z"
+},
+
+{
+"id": "phase2-configure-dmz-vlan",
+"title": "Configure logical DMZ VLAN",
+"priority": "critical",
+"status": "not-started",
+"dependencies": ["phase2-install-core-stack"],
+"startDate": "2026-02-08T00:00:00.000Z",
+"endDate": "2026-02-10T23:59:59.999Z"
+},
+
+{
+"id": "phase2-connect-palo-alto",
+"title": "Connect core stack to Palo Alto firewalls",
+"priority": "critical",
+"status": "not-started",
+"dependencies": [
+"phase2-configure-management-vlan",
+"phase2-configure-server-vlan",
+"phase2-configure-storage-vlan",
+"phase2-configure-vdi-vlan",
+"phase2-configure-cluster-vlan",
+"phase2-configure-dmz-vlan"
+],
+"startDate": "2026-02-11T00:00:00.000Z",
+"endDate": "2026-02-14T23:59:59.999Z"
+},
+
+{
+"id": "phase2-validate-routing",
+"title": "Validate routing",
+"priority": "high",
+"status": "not-started",
+"dependencies": ["phase2-connect-palo-alto"],
+"startDate": "2026-02-15T00:00:00.000Z",
+"endDate": "2026-02-18T23:59:59.999Z"
+},
+
+{
+"id": "phase2-validate-segmentation",
+"title": "Validate segmentation",
+"priority": "high",
+"status": "not-started",
+"dependencies": ["phase2-connect-palo-alto"],
+"startDate": "2026-02-15T00:00:00.000Z",
+"endDate": "2026-02-18T23:59:59.999Z"
+},
+
+{
+"id": "phase2-validate-security-zones",
+"title": "Validate security zones",
+"priority": "high",
+"status": "not-started",
+"dependencies": ["phase2-connect-palo-alto"],
+"startDate": "2026-02-15T00:00:00.000Z",
+"endDate": "2026-02-18T23:59:59.999Z"
+},
+
+/* =====================================================
+PHASE 2.5 – TRANSITIONAL DUAL CORE NETWORK
+===================================================== */
+
+{
+"id": "network-build-intercore-trunk",
+"title": "Build trunk between old and new core stacks",
+"priority": "critical",
+"status": "not-started",
+"dependencies": ["phase2-connect-palo-alto"],
+"startDate": "2026-02-19T00:00:00.000Z",
+"endDate": "2026-02-24T23:59:59.999Z"
+},
+
+{
+"id": "network-configure-transitional-routing",
+"title": "Configure transitional routing via old core firewall uplink",
+"priority": "critical",
+"status": "not-started",
+"dependencies": ["network-build-intercore-trunk"],
+"startDate": "2026-02-25T00:00:00.000Z",
+"endDate": "2026-03-01T23:59:59.999Z"
+},
+
+/* =====================================================
+PHASE 4 – DMZ & LOAD BALANCER DRAIN
+===================================================== */
+
+{
+"id": "phase4-audit-loadbalancer-services",
+"title": "Audit services behind Kemp load balancer",
+"priority": "high",
+"status": "not-started",
+"dependencies": [],
+"startDate": "2026-03-01T00:00:00.000Z",
+"endDate": "2026-03-07T23:59:59.999Z"
+},
+
+{
+"id": "phase4-remove-non-horizon-services",
+"title": "Remove non-Horizon services from load balancer",
+"priority": "high",
+"status": "not-started",
+"dependencies": ["phase4-audit-loadbalancer-services"],
+"startDate": "2026-03-08T00:00:00.000Z",
+"endDate": "2026-04-15T23:59:59.999Z"
+},
+
+{
+"id": "phase4-drain-dmz-services",
+"title": "Drain services from physical DMZ switch",
+"priority": "medium",
+"status": "not-started",
+"dependencies": ["phase4-remove-non-horizon-services"],
+"startDate": "2026-03-08T00:00:00.000Z",
+"endDate": "2026-07-01T23:59:59.999Z"
+},
+
+/* =====================================================
+PHASE 5 – HORIZON REBUILD
+===================================================== */
+
+{
+"id": "phase5-deploy-initial-horizon-hosts",
+"title": "Deploy initial 2–4 Horizon hosts",
+"priority": "critical",
+"status": "not-started",
+"dependencies": [
+"horizon-third-party-review",
+"network-configure-transitional-routing"
+],
+"startDate": "2026-03-07T00:00:00.000Z",
+"endDate": "2026-03-21T23:59:59.999Z"
+},
+
+{
+"id": "phase5-build-horizon-core",
+"title": "Third party build Horizon infrastructure",
+"priority": "critical",
+"status": "not-started",
+"dependencies": ["phase5-deploy-initial-horizon-hosts"],
+"startDate": "2026-03-22T00:00:00.000Z",
+"endDate": "2026-04-12T23:59:59.999Z"
+},
+
+{
+"id": "phase5-build-windows11-images",
+"title": "Build Windows 11 VDI images and FSLogix",
+"priority": "high",
+"status": "not-started",
+"dependencies": ["phase5-build-horizon-core"],
+"startDate": "2026-04-13T00:00:00.000Z",
+"endDate": "2026-05-01T23:59:59.999Z"
+},
+
+{
+"id": "communications-pilot-users",
+"title": "Communicate VDI pilot to named test users",
+"priority": "high",
+"status": "not-started",
+"dependencies": ["phase5-build-windows11-images"],
+"startDate": "2026-05-02T00:00:00.000Z",
+"endDate": "2026-05-05T23:59:59.999Z"
+},
+
+{
+"id": "phase5-run-user-pilot",
+"title": "Execute VDI pilot (20–40 users)",
+"priority": "critical",
+"status": "not-started",
+"dependencies": ["communications-pilot-users"],
+"startDate": "2026-05-06T00:00:00.000Z",
+"endDate": "2026-05-31T23:59:59.999Z"
+},
+
+{
+"id": "phase5-scale-horizon-hosts",
+"title": "Deploy remaining Horizon hosts",
+"priority": "high",
+"status": "not-started",
+"dependencies": ["phase5-run-user-pilot"],
+"startDate": "2026-06-01T00:00:00.000Z",
+"endDate": "2026-06-21T23:59:59.999Z"
+},
+
+{
+"id": "communications-production-migration",
+"title": "Communicate production migration waves",
+"priority": "high",
+"status": "not-started",
+"dependencies": ["phase5-scale-horizon-hosts"],
+"startDate": "2026-06-22T00:00:00.000Z",
+"endDate": "2026-06-25T23:59:59.999Z"
+},
+
+{
+"id": "phase5-migrate-users",
+"title": "Migrate users to new Horizon environment",
+"priority": "critical",
+"status": "not-started",
+"dependencies": ["communications-production-migration"],
+"startDate": "2026-06-26T00:00:00.000Z",
+"endDate": "2026-07-31T23:59:59.999Z"
+}
+
+],
+
+"milestones": [
+
+{
+"id": "milestone-procurement-complete",
+"title": "Procurement Complete",
+"date": "2026-02-06T23:59:59.999Z"
+},
+
+{
+"id": "milestone-horizon-design-approved",
+"title": "Horizon Design Approved",
+"date": "2026-03-06T23:59:59.999Z"
+},
+
+{
+"id": "milestone-horizon-pilot-complete",
+"title": "Horizon Pilot Complete",
+"date": "2026-05-31T23:59:59.999Z"
+},
+
+{
+"id": "milestone-production-50",
+"title": "50 Percent Production Migration Complete",
+"date": "2026-07-15T23:59:59.999Z"
+},
+
+{
+"id": "milestone-legacy-horizon-removed",
+"title": "Legacy Horizon Decommissioned",
+"date": "2026-08-01T23:59:59.999Z"
+},
+
+{
+"id": "milestone-programme-complete",
+"title": "Programme Complete",
+"date": "2026-09-06T23:59:59.999Z"
+}
+
+]
 }

@@ -30,7 +30,7 @@ export default function DocumentationPage() {
 
     if (!plan) {
         return (
-            <div className="h-screen flex items-center justify-center bg-background">
+            <div className="h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 dark:from-[#001524] dark:via-[#022943]/20 dark:to-[#001524]">
                 <div className="text-center">
                     {isLoading ? (
                         <>
@@ -52,8 +52,9 @@ export default function DocumentationPage() {
     }
 
     return (
-        <div className="h-screen flex flex-col bg-background text-foreground overflow-hidden relative">
-            <div className="fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-100/50 via-background to-background dark:from-blue-900/20 dark:via-background dark:to-background pointer-events-none" />
+        <div className="h-screen flex flex-col bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 dark:from-[#001524] dark:via-[#022943]/20 dark:to-[#001524] text-foreground overflow-hidden relative">
+            <div className="fixed inset-0 -z-10 bg-[url('/grain.png')] opacity-[0.03] pointer-events-none" />
+            <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#022943]/5 dark:bg-blue-500/10 blur-[120px] rounded-full pointer-events-none -z-10" />
 
             <AppHeader
                 backHref={`/plans/${planId}`}
@@ -61,12 +62,12 @@ export default function DocumentationPage() {
                 subtitle={`${plan.name} • Manage project documentation and task details`}
                 showLogo={false}
             >
-                    <div className="flex items-center gap-2 bg-muted/30 p-1 rounded-lg border border-border/50">
+                    <div className="flex items-center gap-2 bg-slate-100/80 dark:bg-white/10 p-1 rounded-xl border border-slate-200 dark:border-white/10">
                         <button
                             onClick={() => setActiveView('viewer')}
-                            className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition-all ${activeView === 'viewer'
-                                    ? 'bg-background shadow-sm text-primary'
-                                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                            className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg transition-all ${activeView === 'viewer'
+                                    ? 'bg-white dark:bg-[#022943] shadow-sm text-[#022943] dark:text-white'
+                                    : 'text-slate-600 dark:text-slate-400 hover:text-[#022943] dark:hover:text-white hover:bg-white/50 dark:hover:bg-white/10'
                                 }`}
                         >
                             <Layout className="w-4 h-4" />
@@ -76,9 +77,9 @@ export default function DocumentationPage() {
                             <>
                                 <button
                                     onClick={() => setActiveView('editor')}
-                                    className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition-all ${activeView === 'editor'
-                                            ? 'bg-background shadow-sm text-primary'
-                                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                                    className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg transition-all ${activeView === 'editor'
+                                            ? 'bg-white dark:bg-[#022943] shadow-sm text-[#022943] dark:text-white'
+                                            : 'text-slate-600 dark:text-slate-400 hover:text-[#022943] dark:hover:text-white hover:bg-white/50 dark:hover:bg-white/10'
                                         }`}
                                 >
                                     <FileEdit className="w-4 h-4" />
@@ -86,9 +87,9 @@ export default function DocumentationPage() {
                                 </button>
                                 <button
                                     onClick={() => setActiveView('details')}
-                                    className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition-all ${activeView === 'details'
-                                            ? 'bg-background shadow-sm text-primary'
-                                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                                    className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg transition-all ${activeView === 'details'
+                                            ? 'bg-white dark:bg-[#022943] shadow-sm text-[#022943] dark:text-white'
+                                            : 'text-slate-600 dark:text-slate-400 hover:text-[#022943] dark:hover:text-white hover:bg-white/50 dark:hover:bg-white/10'
                                         }`}
                                 >
                                     <List className="w-4 h-4" />
@@ -101,7 +102,7 @@ export default function DocumentationPage() {
 
             {/* Main Content */}
             <main className="flex-1 overflow-hidden max-w-7xl mx-auto w-full p-6">
-                <div className="h-full glass-card rounded-xl border border-border/50 shadow-sm overflow-hidden flex flex-col">
+                <div className="h-full rounded-[20px] border border-slate-200 dark:border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.08)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.2)] bg-white dark:bg-[#022943] overflow-hidden flex flex-col">
                     {(activeView === 'viewer' || !canEdit) && <DocPanel />}
                     {canEdit && activeView === 'editor' && <DocEditor />}
                     {canEdit && activeView === 'details' && <TaskDetailsEditor />}

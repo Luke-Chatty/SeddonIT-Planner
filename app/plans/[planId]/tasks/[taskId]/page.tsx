@@ -41,7 +41,7 @@ export default function TaskDetailPage() {
 
     if (!plan) {
         return (
-            <div className="h-screen flex items-center justify-center bg-background">
+            <div className="h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 dark:from-[#001524] dark:via-[#022943]/20 dark:to-[#001524]">
                 <div className="text-center">
                     {isLoading ? (
                         <>
@@ -64,7 +64,7 @@ export default function TaskDetailPage() {
 
     if (!task) {
         return (
-            <div className="h-screen flex items-center justify-center bg-background">
+            <div className="h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 dark:from-[#001524] dark:via-[#022943]/20 dark:to-[#001524]">
                 <div className="text-center">
                     <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
                     <p className="text-lg text-muted-foreground">Loading task details...</p>
@@ -74,8 +74,9 @@ export default function TaskDetailPage() {
     }
 
     return (
-        <div className="min-h-screen bg-background text-foreground relative flex flex-col">
-            <div className="fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-100/50 via-background to-background dark:from-blue-900/20 dark:via-background dark:to-background pointer-events-none" />
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 dark:from-[#001524] dark:via-[#022943]/20 dark:to-[#001524] text-foreground relative flex flex-col">
+            <div className="fixed inset-0 -z-10 bg-[url('/grain.png')] opacity-[0.03] pointer-events-none" />
+            <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#022943]/5 dark:bg-blue-500/10 blur-[120px] rounded-full pointer-events-none -z-10" />
 
             <AppHeader
                 backHref={`/plans/${planId}`}
@@ -86,7 +87,7 @@ export default function TaskDetailPage() {
 
             {/* Main Content - Full Screen Mode */}
             <main className="flex-1 w-full h-[calc(100vh-80px)] p-4 md:p-6 overflow-hidden">
-                <div className="glass-card w-full h-full rounded-xl border border-border/60 shadow-2xl p-6 md:p-8 overflow-hidden flex flex-col bg-white/80 dark:bg-slate-900/80">
+                <div className="w-full h-full rounded-[20px] border border-slate-200 dark:border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.08)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.2)] p-6 md:p-8 overflow-hidden flex flex-col bg-white dark:bg-[#022943]">
                     <TaskForm
                         task={task}
                         onClose={handleClose}

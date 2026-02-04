@@ -50,6 +50,17 @@ export async function fetchPlan(planId: string): Promise<PlanWithRole | null> {
 
 export type PlanMemberItem = { userId: string; email: string | null; name: string | null; role: string };
 
+export type DirectoryUser = { id: string; displayName: string | null; mail: string };
+
+export async function searchDirectory(query: string): Promise<DirectoryUser[]> {
+  const q = query.trim();
+  if (q.length < 2) return [];
+  const res = await fetch(`/api/directory/search?q=${encodeURIComponent(q)}`);
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.users ?? [];
+}
+
 export async function fetchPlanMembers(planId: string): Promise<PlanMemberItem[]> {
   const res = await fetch(`/api/plans/${planId}/members`);
   if (!res.ok) throw new Error('Failed to load members');

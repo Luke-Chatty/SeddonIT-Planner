@@ -133,7 +133,7 @@ export default function PlanTasksPage() {
 
   if (!plan) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-blue-50/20 to-purple-50/10 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
+      <div className="h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 dark:from-[#001524] dark:via-[#022943]/20 dark:to-[#001524]">
         <div className="text-center">
           {isLoading ? (
             <>
@@ -193,8 +193,9 @@ export default function PlanTasksPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground relative transition-colors duration-300">
-      <div className="fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-100/50 via-background to-background dark:from-blue-900/20 dark:via-background dark:to-background pointer-events-none" />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 dark:from-[#001524] dark:via-[#022943]/20 dark:to-[#001524] text-foreground relative transition-colors duration-300">
+      <div className="fixed inset-0 -z-10 bg-[url('/grain.png')] opacity-[0.03] pointer-events-none" />
+      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#022943]/5 dark:bg-blue-500/10 blur-[120px] rounded-full pointer-events-none -z-10" />
 
       <AppHeader
         backHref={`/plans/${planId}`}
@@ -207,7 +208,7 @@ export default function PlanTasksPage() {
             onClick={handleAdd}
             variant="primary"
             size="sm"
-            className="shadow-lg shadow-primary/20"
+            className="rounded-xl shadow-lg shadow-[#022943]/20"
           >
             <Plus className="w-4 h-4 mr-2" />
             New Task
@@ -218,11 +219,11 @@ export default function PlanTasksPage() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-6 py-6">
         {/* Filters */}
-        <div className="mb-6 p-4 glass-card rounded-xl border border-border/60 shadow-sm">
+        <div className="mb-6 p-4 rounded-[20px] border border-slate-200 dark:border-white/10 bg-white/95 dark:bg-[#022943]/95 backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.08)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.2)]">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm font-medium text-foreground">Filters:</span>
+              <Filter className="w-4 h-4 text-[#022943] dark:text-[#4ebec7]" />
+              <span className="text-sm font-medium text-[#022943] dark:text-white">Filters:</span>
             </div>
             <Select
               value={statusFilter}
@@ -248,7 +249,7 @@ export default function PlanTasksPage() {
               ]}
               className="w-48"
             />
-            <div className="ml-auto text-sm text-muted-foreground">
+            <div className="ml-auto text-sm text-slate-600 dark:text-slate-400">
               {sortedTasks.length} of {plan.tasks.length} tasks
             </div>
           </div>
@@ -266,14 +267,14 @@ export default function PlanTasksPage() {
           >
             <div className="space-y-4">
               {sortedTasks.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-center bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-xl border border-gray-200/60 dark:border-gray-700/60">
-                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/30 dark:to-purple-900/30 flex items-center justify-center mb-4">
-                    <Filter className="w-10 h-10 text-blue-500 dark:text-blue-400" />
+                <div className="flex flex-col items-center justify-center py-16 text-center rounded-[20px] border border-slate-200 dark:border-white/10 bg-white dark:bg-[#022943] shadow-[0_20px_50px_rgba(0,0,0,0.08)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.2)]">
+                  <div className="w-20 h-20 rounded-full bg-[#022943]/10 dark:bg-[#4ebec7]/20 flex items-center justify-center mb-4">
+                    <Filter className="w-10 h-10 text-[#022943] dark:text-[#4ebec7]" />
                   </div>
-                  <p className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  <p className="text-lg font-semibold text-[#022943] dark:text-white mb-2">
                     {plan.tasks.length === 0 ? 'No tasks yet' : 'No matching tasks'}
                   </p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
                     {plan.tasks.length === 0
                       ? 'Click "New Task" to create your first task.'
                       : 'Try adjusting your filters.'}

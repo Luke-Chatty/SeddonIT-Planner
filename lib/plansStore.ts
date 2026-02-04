@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { toast } from 'sonner';
 import { PlansCollection, InfrastructurePlan } from './types';
 import {
   loadPlansFromStorage,
@@ -186,7 +187,7 @@ export const usePlansStore = create<PlansStore>((set, get) => ({
         } catch (err) {
           console.error('Failed to delete plan:', err);
           const message = err instanceof Error ? err.message : 'Failed to delete plan';
-          if (typeof window !== 'undefined') window.alert(message);
+          toast.error(message);
         }
       })();
       return;

@@ -25,6 +25,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { Share2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { AppHeader } from '@/components/AppHeader';
 import { SharePlanModal } from '@/components/SharePlanModal';
 import { exportPlanToFile, importPlanFromFile, exportGanttAsImage, exportGanttAsPDF } from '@/lib/storage';
@@ -93,14 +94,15 @@ export default function PlanDetailPage() {
     try {
       const ganttContainer = document.getElementById('gantt-chart-container');
       if (!ganttContainer) {
-        alert('Gantt chart not found. Please switch to Gantt or Split view first.');
+        toast.error('Gantt chart not found. Switch to Gantt or Split view first.');
         return;
       }
 
       await exportGanttAsImage('gantt-chart-container', `${plan?.name || 'plan'}-gantt.png`);
       setIsExportMenuOpen(false);
+      toast.success('Image exported');
     } catch (error) {
-      alert('Error exporting image: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      toast.error('Error exporting image: ' + (error instanceof Error ? error.message : 'Unknown error'));
     }
   };
 
@@ -108,14 +110,15 @@ export default function PlanDetailPage() {
     try {
       const ganttContainer = document.getElementById('gantt-chart-container');
       if (!ganttContainer) {
-        alert('Gantt chart not found. Please switch to Gantt or Split view first.');
+        toast.error('Gantt chart not found. Switch to Gantt or Split view first.');
         return;
       }
 
       await exportGanttAsPDF('gantt-chart-container', plan?.name || 'Infrastructure Plan', `${plan?.name || 'plan'}-gantt.pdf`);
       setIsExportMenuOpen(false);
+      toast.success('PDF exported');
     } catch (error) {
-      alert('Error exporting PDF: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      toast.error('Error exporting PDF: ' + (error instanceof Error ? error.message : 'Unknown error'));
     }
   };
 
@@ -130,9 +133,9 @@ export default function PlanDetailPage() {
         id: planId, // Preserve the current plan ID
       });
       setIsImportModalOpen(false);
-      alert('Plan imported successfully!');
+      toast.success('Plan imported successfully');
     } catch (error) {
-      alert('Error importing plan: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      toast.error('Error importing plan: ' + (error instanceof Error ? error.message : 'Unknown error'));
     }
   };
 
@@ -143,7 +146,7 @@ export default function PlanDetailPage() {
         name: planName,
         description: planDescription,
       });
-      alert('Plan information updated!');
+      toast.success('Plan information updated');
     }
   };
 
@@ -159,7 +162,7 @@ export default function PlanDetailPage() {
 
   if (!plan) {
     return (
-      <div className="h-screen flex items-center justify-center bg-background">
+      <div className="h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 dark:from-[#001524] dark:via-[#022943]/20 dark:to-[#001524]">
         <div className="text-center">
           {isLoading ? (
             <>
@@ -181,8 +184,9 @@ export default function PlanDetailPage() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-background text-foreground overflow-hidden relative">
-      <div className="fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-100/50 via-background to-background dark:from-blue-900/20 dark:via-background dark:to-background pointer-events-none" />
+    <div className="h-screen flex flex-col bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 dark:from-[#001524] dark:via-[#022943]/20 dark:to-[#001524] text-foreground overflow-hidden relative">
+      <div className="fixed inset-0 -z-10 bg-[url('/grain.png')] opacity-[0.03] pointer-events-none" />
+      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#022943]/5 dark:bg-blue-500/10 blur-[120px] rounded-full pointer-events-none -z-10" />
 
       <AppHeader
         backHref="/"
@@ -219,32 +223,32 @@ export default function PlanDetailPage() {
         <div className="relative">
           {isExportMenuOpen && (
             <div
-              className="absolute right-0 mt-2 w-56 bg-popover/95 backdrop-blur-xl border border-border rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2"
+              className="absolute right-0 mt-2 w-56 bg-white dark:bg-[#022943] backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)] z-50 overflow-hidden animate-in fade-in slide-in-from-top-2"
               role="menu"
               aria-label="Export options"
             >
               <button
                 onClick={handleExportJSON}
-                className="w-full text-left px-4 py-3 text-sm font-medium text-foreground hover:bg-muted/50 transition-all duration-150 flex items-center gap-2"
+                className="w-full text-left px-4 py-3 text-sm font-medium text-[#022943] dark:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-all duration-150 flex items-center gap-2"
                 role="menuitem"
               >
-                <Download className="w-4 h-4 text-primary" />
+                <Download className="w-4 h-4 text-[#022943] dark:text-[#4ebec7]" />
                 Export as JSON
               </button>
               <button
                 onClick={handleExportImage}
-                className="w-full text-left px-4 py-3 text-sm font-medium text-foreground hover:bg-muted/50 transition-all duration-150 flex items-center gap-2 border-t border-border"
+                className="w-full text-left px-4 py-3 text-sm font-medium text-[#022943] dark:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-all duration-150 flex items-center gap-2 border-t border-slate-200 dark:border-white/10"
                 role="menuitem"
               >
-                <Download className="w-4 h-4 text-purple-500" />
+                <Download className="w-4 h-4 text-[#804097]" />
                 Export Gantt as Image
               </button>
               <button
                 onClick={handleExportPDF}
-                className="w-full text-left px-4 py-3 text-sm font-medium text-foreground hover:bg-muted/50 transition-all duration-150 flex items-center gap-2 border-t border-border"
+                className="w-full text-left px-4 py-3 text-sm font-medium text-[#022943] dark:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-all duration-150 flex items-center gap-2 border-t border-slate-200 dark:border-white/10"
                 role="menuitem"
               >
-                <Download className="w-4 h-4 text-destructive" />
+                <Download className="w-4 h-4 text-[#ed1c24]" />
                 Export Gantt as PDF
               </button>
             </div>
@@ -258,7 +262,7 @@ export default function PlanDetailPage() {
       />
 
       {/* Stats Dashboard */}
-      <div className="flex-shrink-0 px-6 py-4 border-b border-border/40 bg-card/40 backdrop-blur-sm">
+      <div className="flex-shrink-0 px-6 py-4 border-b border-slate-200 dark:border-white/10 bg-white/80 dark:bg-[#022943]/80 backdrop-blur-xl shadow-sm">
         <PlanOverview />
       </div>
 
@@ -267,17 +271,17 @@ export default function PlanDetailPage() {
         {/* Left Sidebar - Task List */}
         <div
           className={`
-            flex-shrink-0 transition-all duration-300 ease-in-out border-r border-gray-200/60 dark:border-gray-800/60
+            flex-shrink-0 transition-all duration-300 ease-in-out border-r border-slate-200 dark:border-white/10
             ${leftSidebarOpen ? 'w-[400px]' : 'w-0 overflow-hidden'}
-            bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl
+            bg-white/95 dark:bg-[#022943]/95 backdrop-blur-xl
           `}
         >
           {leftSidebarOpen && (
             <div className="h-full flex flex-col">
-              <div className="flex items-center justify-between p-4 border-b border-gray-200/60 dark:border-gray-800/60">
+              <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-white/10">
                 <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                    <List className="w-5 h-5 text-blue-500" />
+                  <h2 className="text-lg font-bold text-[#022943] dark:text-white flex items-center gap-2">
+                    <List className="w-5 h-5 text-[#022943] dark:text-[#4ebec7]" />
                     Tasks
                   </h2>
                   <Button
@@ -309,17 +313,17 @@ export default function PlanDetailPage() {
         {!leftSidebarOpen && (
           <button
             onClick={() => setLeftSidebarOpen(true)}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-20 p-2 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border border-gray-200/60 dark:border-gray-800/60 rounded-r-lg shadow-lg hover:bg-white dark:hover:bg-gray-900 transition-colors"
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-20 p-2 bg-white/95 dark:bg-[#022943]/95 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-r-xl shadow-lg hover:bg-white dark:hover:bg-[#022943] transition-colors"
             aria-label="Open task list"
           >
-            <ChevronRight className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+            <ChevronRight className="w-4 h-4 text-[#022943] dark:text-slate-300" />
           </button>
         )}
 
         {/* Center - Gantt Chart (Primary Focus) */}
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           <div className="h-full p-4">
-            <div className="h-full border border-gray-200/60 dark:border-gray-800/60 rounded-xl overflow-hidden shadow-xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl">
+            <div className="h-full border border-slate-200 dark:border-white/10 rounded-[20px] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.08)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.2)] bg-white dark:bg-[#022943]">
               <GanttChart />
             </div>
           </div>

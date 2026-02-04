@@ -1,9 +1,11 @@
 'use client';
 
+import { useState } from 'react';
 import { Task } from '@/lib/types';
 import { formatDate, getStatusColor, getPriorityColor, cn } from '@/lib/utils';
 import { Calendar, User, AlertCircle, Edit2, Trash2, ChevronRight } from 'lucide-react';
 import { Button } from '../UI/Button';
+import { ConfirmModal } from '../UI/ConfirmModal';
 
 interface TaskCardProps {
   task: Task;
@@ -25,6 +27,8 @@ export function TaskCard({
   isSelected = false,
   readOnly = false,
 }: TaskCardProps) {
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
   const getStatusGradient = (status: Task['status']) => {
     switch (status) {
       case 'completed':
@@ -101,9 +105,7 @@ export function TaskCard({
               size="sm"
               onClick={(e) => {
                 e.stopPropagation();
-                if (confirm('Are you sure you want to delete this task?')) {
-                  onDelete(task.id);
-                }
+                setShowDeleteConfirm(true);
               }}
               className="h-9 w-9 p-0 hover:bg-red-100 dark:hover:bg-red-900/30"
             >
@@ -156,6 +158,16 @@ export function TaskCard({
           </div>
         )}
       </div>
+
+      <ConfirmModal
+        open={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={() => onDelete(task.id)}
+        title="Delete task?"
+        message="Are you sure you want to delete this task? This cannot be undone."
+        confirmLabel="Delete"
+        variant="danger"
+      />
     </div>
   );
 }

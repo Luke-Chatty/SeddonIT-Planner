@@ -21,8 +21,10 @@ import { formatDate } from '@/lib/utils';
 import { exportPlanToFile, importPlanFromFile } from '@/lib/storage';
 import { InfrastructurePlan, type PlanWithRole } from '@/lib/types';
 import { Share2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { AppHeader } from '@/components/AppHeader';
 import { SharePlanModal } from '@/components/SharePlanModal';
+import { ConfirmModal } from '@/components/UI/ConfirmModal';
 
 export default function PlansPage() {
   const router = useRouter();
@@ -33,6 +35,7 @@ export default function PlansPage() {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [sharePlanId, setSharePlanId] = useState<string | null>(null);
   const [editingPlan, setEditingPlan] = useState<InfrastructurePlan | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ planId: string; planName: string } | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -48,7 +51,7 @@ export default function PlansPage() {
 
   const handleCreatePlan = async () => {
     if (!formData.name.trim() || !formData.startDate || !formData.endDate) {
-      alert('Please fill in all required fields');
+      toast.error('Please fill in all required fields');
       return;
     }
 
@@ -79,7 +82,7 @@ export default function PlansPage() {
 
   const handleUpdatePlan = () => {
     if (!editingPlan || !formData.name.trim() || !formData.startDate || !formData.endDate) {
-      alert('Please fill in all required fields');
+      toast.error('Please fill in all required fields');
       return;
     }
 
@@ -96,8 +99,14 @@ export default function PlansPage() {
   };
 
   const handleDeletePlan = (planId: string, planName: string) => {
-    if (confirm(`Are you sure you want to delete "${planName}"? This action cannot be undone.`)) {
-      deletePlan(planId);
+    setDeleteConfirm({ planId, planName });
+  };
+
+  const handleConfirmDeletePlan = () => {
+    if (deleteConfirm) {
+      deletePlan(deleteConfirm.planId);
+      setDeleteConfirm(null);
+      toast.success('Plan deleted');
     }
   };
 
@@ -123,9 +132,9 @@ export default function PlansPage() {
       };
       addPlan(planWithId);
       setIsImportModalOpen(false);
-      alert('Plan imported successfully!');
+      toast.success('Plan imported successfully');
     } catch (error) {
-      alert('Error importing plan: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      toast.error('Error importing plan: ' + (error instanceof Error ? error.message : 'Unknown error'));
     }
   };
 
@@ -484,6 +493,16 @@ export default function PlansPage() {
       </Modal>
 
       <SharePlanModal planId={sharePlanId} onClose={() => setSharePlanId(null)} />
+
+      <ConfirmModal
+        open={!!deleteConfirm}
+        onClose={() => setDeleteConfirm(null)}
+        onConfirm={handleConfirmDeletePlan}
+        title="Delete plan?"
+        message={deleteConfirm ? `Are you sure you want to delete "${deleteConfirm.planName}"? This action cannot be undone.` : ''}
+        confirmLabel="Delete"
+        variant="danger"
+      />
     </div>
   );
 }
