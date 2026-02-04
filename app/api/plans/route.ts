@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth-server';
 import { prisma } from '@/lib/prisma';
-import { getCurrentUserId } from '@/lib/plan-access';
 import { prismaPlanToPlan } from '@/lib/db-plan';
 import type { InfrastructurePlan } from '@/lib/types';
 
@@ -15,8 +14,9 @@ export async function POST(request: NextRequest) {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   if (!hasDatabase()) return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
 
-  const userId = getCurrentUserId(session);
-  if (!userId) return NextResponse.json({ error: 'User not found' }, { status: 403 });
+  const { getOwnerIdFromSession } = await import('@/lib/plan-access');
+  const ownerId = await getOwnerIdFromSession(session);
+  if (!ownerId) return NextResponse.json({ error: 'User not found. Sign in again.' }, { status: 403 });
 
   let body: InfrastructurePlan & { id?: string };
   try {
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
         description: typeof body.description === 'string' ? body.description.trim() || null : null,
         startDate: new Date(startDate),
         endDate: new Date(endDate),
-        ownerId: userId,
+        ownerId,
         tasks: {
           create: (body.tasks ?? []).map((t) => ({
             id: t.id,

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth-server';
 import { prisma } from '@/lib/prisma';
 import { prismaPlanToPlan } from '@/lib/db-plan';
-import { getCurrentUserId, getPlanAccess } from '@/lib/plan-access';
+import { getPlanAccess, getOwnerIdFromSession } from '@/lib/plan-access';
 import type { InfrastructurePlan } from '@/lib/types';
 
 function hasDatabase(): boolean {
@@ -24,21 +24,29 @@ export async function GET(
   }
 
   const { planId } = await params;
-  const userId = getCurrentUserId(session);
+  const userId = await getOwnerIdFromSession(session);
 
   try {
-    const access = await getPlanAccess(planId, userId);
-    if (!access?.canView) {
-      return NextResponse.json({ error: 'Plan not found or access denied' }, { status: 404 });
-    }
-
-    const plan = await prisma.plan.findUnique({
+    let plan = await prisma.plan.findUnique({
       where: { id: planId },
       include: { tasks: true, milestones: true },
     });
 
     if (!plan) {
       return NextResponse.json({ error: 'Plan not found' }, { status: 404 });
+    }
+
+    if (plan.ownerId == null && userId != null) {
+      await prisma.plan.update({
+        where: { id: planId },
+        data: { ownerId: userId },
+      });
+      plan = { ...plan, ownerId: userId };
+    }
+
+    const access = await getPlanAccess(planId, userId);
+    if (!access?.canView) {
+      return NextResponse.json({ error: 'Plan not found or access denied' }, { status: 404 });
     }
 
     const payload = prismaPlanToPlan(plan);
@@ -67,7 +75,7 @@ export async function PUT(
   }
 
   const { planId } = await params;
-  const userId = getCurrentUserId(session);
+  const userId = await getOwnerIdFromSession(session);
 
   try {
     const existing = await prisma.plan.findUnique({
@@ -92,7 +100,8 @@ export async function PUT(
       );
     }
 
-    const claimOwnership = existing.ownerId == null && userId != null;
+    const resolvedOwnerId = existing.ownerId == null ? await getOwnerIdFromSession(session) : null;
+    const claimOwnership = existing.ownerId == null && resolvedOwnerId != null;
 
     await prisma.$transaction(async (tx) => {
       await tx.task.deleteMany({ where: { planId } });
@@ -101,7 +110,7 @@ export async function PUT(
       await tx.plan.update({
         where: { id: planId },
         data: {
-          ...(claimOwnership && { ownerId: userId }),
+          ...(claimOwnership && resolvedOwnerId && { ownerId: resolvedOwnerId }),
           name: body.name,
           description: body.description ?? null,
           startDate: new Date(body.startDate),
@@ -170,7 +179,7 @@ export async function DELETE(
   }
 
   const { planId } = await params;
-  const userId = getCurrentUserId(session);
+  const userId = await getOwnerIdFromSession(session);
 
   try {
     const access = await getPlanAccess(planId, userId);

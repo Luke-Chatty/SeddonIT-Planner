@@ -50,7 +50,13 @@ export async function fetchPlan(planId: string): Promise<PlanWithRole | null> {
 
 export type PlanMemberItem = { userId: string; email: string | null; name: string | null; role: string };
 
-export type DirectoryUser = { id: string; displayName: string | null; mail: string };
+export type DirectoryUser = {
+  id: string;
+  displayName: string | null;
+  mail: string;
+  jobTitle?: string | null;
+  source?: 'graph' | 'database';
+};
 
 export async function searchDirectory(query: string): Promise<DirectoryUser[]> {
   const q = query.trim();
@@ -71,12 +77,13 @@ export async function fetchPlanMembers(planId: string): Promise<PlanMemberItem[]
 export async function invitePlanMember(
   planId: string,
   email: string,
-  role: 'EDITOR' | 'VIEWER'
+  role: 'EDITOR' | 'VIEWER',
+  displayName?: string | null
 ): Promise<void> {
   const res = await fetch(`/api/plans/${planId}/members`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, role }),
+    body: JSON.stringify({ email, role, displayName: displayName ?? undefined }),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));

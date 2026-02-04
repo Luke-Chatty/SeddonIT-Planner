@@ -263,7 +263,22 @@ export default function PlanDetailPage() {
 
       {/* Stats Dashboard */}
       <div className="flex-shrink-0 px-6 py-4 border-b border-slate-200 dark:border-white/10 bg-white/80 dark:bg-[#022943]/80 backdrop-blur-xl shadow-sm">
-        <PlanOverview />
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex-1 min-w-0">
+            <PlanOverview />
+          </div>
+          {canShare && (
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setShareModalOpen(true)}
+              className="gap-2 shrink-0"
+            >
+              <Share2 className="w-4 h-4" />
+              Share plan
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Main Content Area - Two Column Layout */}

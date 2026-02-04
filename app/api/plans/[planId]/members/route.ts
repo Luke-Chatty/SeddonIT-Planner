@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth-server';
 import { prisma } from '@/lib/prisma';
-import { getCurrentUserId, getPlanAccess } from '@/lib/plan-access';
+import { getPlanAccess, getOwnerIdFromSession } from '@/lib/plan-access';
 import { PlanRole } from '@prisma/client';
 
 function hasDatabase(): boolean {
@@ -18,7 +18,7 @@ export async function GET(
   if (!hasDatabase()) return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
 
   const { planId } = await params;
-  const userId = getCurrentUserId(session);
+  const userId = await getOwnerIdFromSession(session);
 
   const access = await getPlanAccess(planId, userId);
   if (!access?.canView) {
@@ -62,7 +62,7 @@ export async function POST(
   if (!hasDatabase()) return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
 
   const { planId } = await params;
-  const userId = getCurrentUserId(session);
+  const userId = await getOwnerIdFromSession(session);
 
   const access = await getPlanAccess(planId, userId);
   if (!access?.canManageMembers) {
@@ -72,17 +72,18 @@ export async function POST(
   const body = await request.json();
   const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : null;
   const role = (body.role === 'EDITOR' || body.role === 'VIEWER' ? body.role : 'VIEWER') as PlanRole;
+  const displayName = typeof body.displayName === 'string' ? body.displayName.trim() || null : null;
 
   if (!email) {
     return NextResponse.json({ error: 'Email is required' }, { status: 400 });
   }
 
-  const user = await prisma.user.findUnique({ where: { email } });
+  let user = await prisma.user.findUnique({ where: { email } });
   if (!user) {
-    return NextResponse.json(
-      { error: 'No user found with that email. They must sign in at least once to appear.' },
-      { status: 404 }
-    );
+    // Allow inviting by email even if they have not signed in yet (e.g. Azure AD user from directory search)
+    user = await prisma.user.create({
+      data: { email, name: displayName ?? email.split('@')[0] },
+    });
   }
 
   if (user.id === userId) {
@@ -116,7 +117,7 @@ export async function DELETE(
   if (!hasDatabase()) return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
 
   const { planId } = await params;
-  const userId = getCurrentUserId(session);
+  const userId = await getOwnerIdFromSession(session);
   const targetUserId = request.nextUrl.searchParams.get('userId');
 
   if (!targetUserId) {

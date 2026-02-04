@@ -59,7 +59,7 @@ When deployed (e.g. on [Dokploy](https://dokploy.com)), you can store plans in P
 
 **Important:** Plans only persist across reboots (and across devices) when PostgreSQL is in use. If you see "Saved to this device only" on the homepage or plans disappear after a restart, set `DATABASE_URL` in your deployment (e.g. Dokploy → your app → Environment), run `npx prisma migrate deploy` once, then restart.
 
-**If you see errors like** `The table "public.PlanMember" does not exist` **or** `The column "(not available)" does not exist`: the database schema is behind the app. Run migrations against your **production** database (see below).
+**If you see in PostgreSQL logs** `relation "public.Plan" does not exist`, `relation "public.User" does not exist`, `relation "public.PlanMember" does not exist`, or `column Plan.ownerId does not exist`, **or you cannot share/assign people** ("not the owner"): the database schema is missing or behind the app. Run migrations against the database that `DATABASE_URL` uses (see "Running migrations against production" below).
 
 See `.env.example` for a template. No code changes are required—the app detects the database automatically.
 

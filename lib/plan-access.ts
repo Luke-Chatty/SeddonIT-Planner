@@ -7,6 +7,34 @@ export function getCurrentUserId(session: Session | null): string | null {
   return id ?? null;
 }
 
+/**
+ * Ensure the signed-in user exists in the User table (create if missing), then return their database id.
+ * This fixes "not the owner" when the user signed in before the signIn callback ran or when the callback failed.
+ */
+export async function getOwnerIdFromSession(session: Session | null): Promise<string | null> {
+  const email = session?.user?.email;
+  if (!email || typeof email !== 'string') return null;
+  const normalizedEmail = email.toLowerCase().trim();
+  const name = session?.user?.name;
+  const externalId = (session?.user as { id?: string })?.id;
+
+  const existing = await prisma.user.findUnique({
+    where: { email: normalizedEmail },
+    select: { id: true },
+  });
+  if (existing) return existing.id;
+
+  const created = await prisma.user.create({
+    data: {
+      ...(externalId && { id: externalId }),
+      email: normalizedEmail,
+      name: name ?? email.split('@')[0],
+    },
+    select: { id: true },
+  });
+  return created.id;
+}
+
 export type PlanAccess = {
   canView: boolean;
   canEdit: boolean;

@@ -32,6 +32,7 @@ export function SharePlanModal({ planId, onClose }: SharePlanModalProps) {
   const [members, setMembers] = useState<PlanMemberItem[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [selectedEmail, setSelectedEmail] = useState<string | null>(null);
+  const [selectedUser, setSelectedUser] = useState<DirectoryUser | null>(null);
   const [results, setResults] = useState<DirectoryUser[]>([]);
   const [loading, setLoading] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -98,9 +99,10 @@ export function SharePlanModal({ planId, onClose }: SharePlanModalProps) {
     if (!planId || !emailToInvite.trim()) return;
     setError('');
     try {
-      await invitePlanMember(planId, emailToInvite.trim().toLowerCase(), inviteRole);
+      await invitePlanMember(planId, emailToInvite.trim().toLowerCase(), inviteRole, selectedUser?.displayName ?? undefined);
       setInputValue('');
       setSelectedEmail(null);
+      setSelectedUser(null);
       setResults([]);
       setDropdownOpen(false);
       const list = await fetchPlanMembers(planId);
@@ -125,6 +127,7 @@ export function SharePlanModal({ planId, onClose }: SharePlanModalProps) {
   const handleSelect = (user: DirectoryUser) => {
     const mail = user.mail || '';
     setSelectedEmail(mail);
+    setSelectedUser(user);
     setInputValue(user.displayName ? `${user.displayName} (${mail})` : mail);
     setResults([]);
     setDropdownOpen(false);
@@ -138,6 +141,7 @@ export function SharePlanModal({ planId, onClose }: SharePlanModalProps) {
   const handleClose = () => {
     setInputValue('');
     setSelectedEmail(null);
+    setSelectedUser(null);
     setResults([]);
     setError('');
     onClose();
@@ -177,15 +181,44 @@ export function SharePlanModal({ planId, onClose }: SharePlanModalProps) {
                 ) : (
                   results.map((user) => (
                     <li
-                      key={user.id}
+                      key={`${user.source ?? 'db'}-${user.id}`}
                       role="option"
-                      className="px-3 py-2 text-sm cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 text-[#022943] dark:text-white"
+                      className="px-3 py-2.5 text-sm cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 text-[#022943] dark:text-white flex items-center gap-3"
                       onClick={() => handleSelect(user)}
                     >
-                      <span className="font-medium">{user.displayName || user.mail || 'Unknown'}</span>
-                      {user.displayName && user.mail && (
-                        <span className="text-slate-500 dark:text-slate-400 ml-2">{user.mail}</span>
-                      )}
+                      <span className="avatar-with-fallback relative flex-shrink-0 w-10 h-10 rounded-full bg-slate-200 dark:bg-white/20 flex items-center justify-center overflow-hidden text-xs font-semibold text-[#022943] dark:text-white ring-2 ring-slate-200/50 dark:ring-white/10">
+                        {user.source === 'graph' ? (
+                          <>
+                            <img
+                              src={`/api/directory/photo/${encodeURIComponent(user.id)}`}
+                              alt=""
+                              className="w-full h-full object-cover"
+                              loading="eager"
+                              onError={(e) => {
+                                const el = e.target as HTMLImageElement;
+                                el.style.display = 'none';
+                                el.closest('.avatar-with-fallback')?.querySelector('.avatar-fallback')?.classList.remove('hidden');
+                              }}
+                            />
+                            <span className="avatar-fallback hidden absolute inset-0 flex items-center justify-center w-full h-full rounded-full bg-slate-200 dark:bg-white/20">
+                              {(user.displayName || user.mail || '?').slice(0, 2).toUpperCase()}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="flex items-center justify-center w-full h-full">
+                            {(user.displayName || user.mail || '?').slice(0, 2).toUpperCase()}
+                          </span>
+                        )}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="font-medium block truncate">{user.displayName || user.mail || 'Unknown'}</span>
+                        {(user.displayName && user.mail) && (
+                          <span className="text-slate-500 dark:text-slate-400 text-xs block truncate">{user.mail}</span>
+                        )}
+                        {user.jobTitle && (
+                          <span className="text-slate-500 dark:text-slate-400 text-xs block truncate">{user.jobTitle}</span>
+                        )}
+                      </span>
                     </li>
                   ))
                 )}

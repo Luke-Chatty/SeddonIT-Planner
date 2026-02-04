@@ -120,8 +120,8 @@ export function AppHeader({ backHref, title, subtitle, showLogo = true, brandTit
                 <img
                   src={session.user.image}
                   alt=""
-                  width={40}
-                  height={40}
+                  width={96}
+                  height={96}
                   className="h-10 w-10 rounded-full object-cover border-2 border-slate-200 dark:border-white/10 shadow-lg hover:scale-110 transition-transform duration-300 ring-2 ring-transparent hover:ring-[#ed1c24]/30 flex-shrink-0"
                 />
               ) : (

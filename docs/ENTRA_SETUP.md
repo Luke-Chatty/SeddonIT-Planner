@@ -62,6 +62,23 @@ On the app’s **Overview** page:
 6. Click **Add permissions**.
 7. If your org requires it, click **Grant admin consent for [Your org]** so users don’t see a consent prompt (optional but recommended for internal apps).
 
+### Optional: Directory search and user photos (Share plan)
+
+Directory search only includes users who are in the **allscl** and **allhomes** groups (configurable via `AZURE_AD_GROUP_NAMES`). Profile pictures are shown next to each result.
+
+1. In **API permissions**, click **+ Add a permission**.
+2. Choose **Microsoft Graph**.
+3. Choose **Application permissions** (not Delegated).
+4. Add:
+   - **GroupMember.Read.All** – list members of the allscl/allhomes groups for search.
+   - **User.Read.All** – read user profile (display name, email, job title) and **profile photo**.
+5. Click **Add permissions**.
+6. Click **Grant admin consent for [Your org]** (required for application permissions).
+
+Set **AZURE_AD_GROUP_NAMES** (optional) if your group names differ, e.g. `AZURE_AD_GROUP_NAMES=allscl,allhomes`. Default is `allscl,allhomes`. Alternatively set **AZURE_AD_GROUP_IDS** to the group object IDs.
+
+Without these, share still works: you can type an email and invite; search will only use database users.
+
 ---
 
 ## 6. Redirect URI (if you didn’t set it in step 2)
@@ -85,6 +102,7 @@ In your deployment (e.g. Dokploy), set these for the Seddon IT Planner app:
 | `AZURE_AD_CLIENT_ID` | Application (client) ID from step 3 |
 | `AZURE_AD_CLIENT_SECRET` | The client secret value from step 4 |
 | `AZURE_AD_TENANT_ID` | Directory (tenant) ID from step 3, or `common` for multi-tenant |
+| `AZURE_AD_GROUP_NAMES` | Optional. Comma-separated group names for share search (default: `allscl,allhomes`) |
 | `NEXTAUTH_URL` | Your app’s full URL, e.g. `https://plan.seddon.co.uk` |
 | `NEXTAUTH_SECRET` | A random string (e.g. `openssl rand -base64 32`) |
 
@@ -108,6 +126,6 @@ If you see “redirect_uri mismatch”, double-check the redirect URI in Entra (
 - [ ] App registered in Entra ID.
 - [ ] Redirect URI set to `https://<your-domain>/api/auth/callback/azure-ad`.
 - [ ] Client secret created and copied.
-- [ ] API permissions: openid, profile, email (and admin consent if required).
+- [ ] API permissions: openid, profile, email (and admin consent if required). Optional: User.Read.All (Application) for directory search and photos.
 - [ ] Env vars set: `AZURE_AD_CLIENT_ID`, `AZURE_AD_CLIENT_SECRET`, `AZURE_AD_TENANT_ID`, `NEXTAUTH_URL`, `NEXTAUTH_SECRET`.
 - [ ] App restarted/redeployed.
