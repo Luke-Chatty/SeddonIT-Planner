@@ -53,7 +53,7 @@ export default function TaskDetailPage() {
                             <p className="text-lg font-medium text-foreground mb-2">Plan not found or access denied</p>
                             <p className="text-muted-foreground mb-4">This plan does not exist or you don’t have permission to view it.</p>
                             <Button variant="primary" onClick={() => router.push('/')}>
-                                Back to My Plans
+                                Back to My Plan
                             </Button>
                         </>
                     )}

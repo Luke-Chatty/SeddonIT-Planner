@@ -185,7 +185,7 @@ export default function PlansPage() {
           <div className="flex items-center gap-2 mb-2">
             <div className="h-1 w-8 bg-[#ed1c24] rounded-full" />
             <h2 className="text-3xl font-extrabold text-[#022943] dark:text-white tracking-tight">
-              My Plans
+              My Plan
             </h2>
             <div className="h-1 w-8 bg-[#ed1c24] rounded-full" />
           </div>
