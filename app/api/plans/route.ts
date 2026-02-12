@@ -2,10 +2,42 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth-server';
 import { prisma } from '@/lib/prisma';
 import { prismaPlanToPlan } from '@/lib/db-plan';
+import { getOwnerIdFromSession, getAccessiblePlanIds } from '@/lib/plan-access';
 import type { InfrastructurePlan } from '@/lib/types';
 
 function hasDatabase(): boolean {
   return Boolean(process.env.DATABASE_URL);
+}
+
+/** GET: list plans the current user can access (owner or member). */
+export async function GET() {
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!hasDatabase()) return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
+
+  const userId = await getOwnerIdFromSession(session);
+  const planIds = await getAccessiblePlanIds(userId);
+
+  const plans = planIds.length > 0
+    ? await prisma.plan.findMany({
+        where: { id: { in: planIds } },
+        include: { tasks: true, milestones: true },
+        orderBy: { updatedAt: 'desc' },
+      })
+    : [];
+
+  const planList = plans.map((p) => {
+    const base = prismaPlanToPlan(p);
+    const role = p.ownerId === userId ? 'OWNER' : 'VIEWER';
+    return { ...base, currentUserRole: role };
+  });
+
+  return NextResponse.json({
+    plans: planList,
+    activePlanId: planList[0]?.id ?? null,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  });
 }
 
 /** POST: create a plan (current user becomes owner). Used for new plans and for import. */
@@ -14,7 +46,6 @@ export async function POST(request: NextRequest) {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   if (!hasDatabase()) return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
 
-  const { getOwnerIdFromSession } = await import('@/lib/plan-access');
   const ownerId = await getOwnerIdFromSession(session);
   if (!ownerId) return NextResponse.json({ error: 'User not found. Sign in again.' }, { status: 403 });
 
