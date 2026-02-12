@@ -64,18 +64,19 @@ On the app’s **Overview** page:
 
 ### Optional: Directory search and user photos (Share plan)
 
-Directory search only includes users who are in the **allscl** and **allhomes** groups (configurable via `AZURE_AD_GROUP_NAMES`). Profile pictures are shown next to each result.
+Directory search only includes users who are in the configured groups (e.g. **All SCL**, **All Homes**). Profile pictures are shown next to each result.
 
 1. In **API permissions**, click **+ Add a permission**.
 2. Choose **Microsoft Graph**.
 3. Choose **Application permissions** (not Delegated).
 4. Add:
-   - **GroupMember.Read.All** – list members of the allscl/allhomes groups for search.
+   - **Group.Read.All** – required to resolve group **display names** to IDs when using `AZURE_AD_GROUP_NAMES` (e.g. "All SCL", "All Homes"). If you only use `AZURE_AD_GROUP_IDS`, you can skip this.
+   - **GroupMember.Read.All** – list members of those groups for search.
    - **User.Read.All** – read user profile (display name, email, job title) and **profile photo**.
 5. Click **Add permissions**.
 6. Click **Grant admin consent for [Your org]** (required for application permissions).
 
-Set **AZURE_AD_GROUP_NAMES** (optional) if your group names differ, e.g. `AZURE_AD_GROUP_NAMES=allscl,allhomes`. Default is `allscl,allhomes`. Alternatively set **AZURE_AD_GROUP_IDS** to the group object IDs.
+Set **AZURE_AD_GROUP_NAMES** to your group display names (exact as in Azure), e.g. `AZURE_AD_GROUP_NAMES="All SCL,All Homes"`. Or set **AZURE_AD_GROUP_IDS** to the group object IDs (no Group.Read.All needed).
 
 Without these, share still works: you can type an email and invite; search will only use database users.
 
