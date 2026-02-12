@@ -49,9 +49,10 @@ export const authOptions: NextAuthOptions = {
       if (account?.provider === 'azure-ad' && user.email && getPrisma()) {
         const db = getPrisma()!;
         const uid = (user as { id?: string }).id;
+        const emailNorm = user.email.toLowerCase().trim();
         await db.user.upsert({
-          where: { email: user.email },
-          create: { id: uid!, email: user.email, name: user.name ?? undefined, image: user.image ?? undefined },
+          where: { email: emailNorm },
+          create: { id: uid!, email: emailNorm, name: user.name ?? undefined, image: user.image ?? undefined },
           update: { name: user.name ?? undefined, image: user.image ?? undefined },
         });
       }
