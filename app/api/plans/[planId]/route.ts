@@ -117,7 +117,12 @@ export async function PUT(
       return NextResponse.json({ error: 'Invalid plan startDate or endDate' }, { status: 400 });
     }
 
-    const tasks = [];
+    const tasks: {
+      id: string; title: string; description: string; startDate: Date; endDate: Date;
+      status: string; priority: string; dependencies: string[]; assignedTo: string | null;
+      documentation: string | null; scopeOfWorks: string | null; designInformation: string | null;
+      order: number; parentId: string | null;
+    }[] = [];
     for (const [index, task] of (body.tasks ?? []).entries()) {
       const taskStart = parseDateInput(task.startDate);
       const taskEnd = parseDateInput(task.endDate);
@@ -145,7 +150,9 @@ export async function PUT(
       });
     }
 
-    const milestones = [];
+    const milestones: {
+      id: string; title: string; date: Date; description: string | null;
+    }[] = [];
     for (const [index, milestone] of (body.milestones ?? []).entries()) {
       const milestoneDate = parseDateInput(milestone.date);
       if (!milestoneDate) {
