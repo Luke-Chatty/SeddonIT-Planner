@@ -53,7 +53,12 @@ export const authOptions: NextAuthOptions = {
         const emailNorm = user.email.toLowerCase().trim();
         await db.user.upsert({
           where: { email: emailNorm },
-          create: { id: uid!, email: emailNorm, name: user.name ?? undefined, image: user.image ?? undefined },
+          create: {
+            ...(uid ? { id: uid } : {}),
+            email: emailNorm,
+            name: user.name ?? undefined,
+            image: user.image ?? undefined,
+          },
           update: { name: user.name ?? undefined, image: user.image ?? undefined },
         });
       }

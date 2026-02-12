@@ -6,6 +6,12 @@ import { getPlanAccess, getOwnerIdFromSession } from '@/lib/plan-access';
 import { hasDatabase } from '@/lib/db';
 import type { InfrastructurePlan } from '@/lib/types';
 
+function parseDateInput(value: unknown): Date | null {
+  if (typeof value !== 'string' || !value.trim()) return null;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ planId: string }> }
@@ -88,13 +94,72 @@ export async function PUT(
       return NextResponse.json({ error: 'You do not have permission to edit this plan' }, { status: 403 });
     }
 
-    const body = (await request.json()) as InfrastructurePlan;
+    let body: InfrastructurePlan;
+    try {
+      body = (await request.json()) as InfrastructurePlan;
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+    }
 
     if (body.id !== planId) {
       return NextResponse.json(
         { error: 'Plan ID mismatch' },
         { status: 400 }
       );
+    }
+    if (typeof body.name !== 'string' || !body.name.trim()) {
+      return NextResponse.json({ error: 'Plan name is required' }, { status: 400 });
+    }
+
+    const startDate = parseDateInput(body.startDate);
+    const endDate = parseDateInput(body.endDate);
+    if (!startDate || !endDate) {
+      return NextResponse.json({ error: 'Invalid plan startDate or endDate' }, { status: 400 });
+    }
+
+    const tasks = [];
+    for (const [index, task] of (body.tasks ?? []).entries()) {
+      const taskStart = parseDateInput(task.startDate);
+      const taskEnd = parseDateInput(task.endDate);
+      if (!taskStart || !taskEnd) {
+        return NextResponse.json(
+          { error: `Task ${index + 1} has an invalid startDate or endDate` },
+          { status: 400 }
+        );
+      }
+      tasks.push({
+        id: task.id,
+        title: task.title,
+        description: task.description ?? '',
+        startDate: taskStart,
+        endDate: taskEnd,
+        status: task.status,
+        priority: task.priority,
+        dependencies: task.dependencies ?? [],
+        assignedTo: task.assignedTo ?? null,
+        documentation: task.documentation ?? null,
+        scopeOfWorks: task.scopeOfWorks ?? null,
+        designInformation: task.designInformation ?? null,
+        order: task.order ?? 1,
+        parentId: task.parentId ?? null,
+      });
+    }
+
+    const milestones = [];
+    for (const [index, milestone] of (body.milestones ?? []).entries()) {
+      const milestoneDate = parseDateInput(milestone.date);
+      if (!milestoneDate) {
+        return NextResponse.json(
+          { error: `Milestone ${index + 1} has an invalid date` },
+          { status: 400 }
+        );
+      }
+      milestones.push({
+        id: milestone.id,
+        title: milestone.title,
+        date: milestoneDate,
+        description: milestone.description ?? null,
+      });
     }
 
     const resolvedOwnerId = existing.ownerId == null ? await getOwnerIdFromSession(session) : null;
@@ -108,35 +173,15 @@ export async function PUT(
         where: { id: planId },
         data: {
           ...(claimOwnership && resolvedOwnerId && { ownerId: resolvedOwnerId }),
-          name: body.name,
+          name: body.name.trim(),
           description: body.description ?? null,
-          startDate: new Date(body.startDate),
-          endDate: new Date(body.endDate),
+          startDate,
+          endDate,
           tasks: {
-            create: (body.tasks ?? []).map((t) => ({
-              id: t.id,
-              title: t.title,
-              description: t.description ?? '',
-              startDate: new Date(t.startDate),
-              endDate: new Date(t.endDate),
-              status: t.status,
-              priority: t.priority,
-              dependencies: t.dependencies ?? [],
-              assignedTo: t.assignedTo ?? null,
-              documentation: t.documentation ?? null,
-              scopeOfWorks: t.scopeOfWorks ?? null,
-              designInformation: t.designInformation ?? null,
-              order: t.order ?? 1,
-              parentId: t.parentId ?? null,
-            })),
+            create: tasks,
           },
           milestones: {
-            create: (body.milestones ?? []).map((m) => ({
-              id: m.id,
-              title: m.title,
-              date: new Date(m.date),
-              description: m.description ?? null,
-            })),
+            create: milestones,
           },
         },
       });

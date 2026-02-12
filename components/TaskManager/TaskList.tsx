@@ -49,8 +49,6 @@ export function TaskList({ onEditTask, planId }: TaskListProps) {
     } catch {}
   }, [storageKey, statusFilter, priorityFilter, searchQuery]);
 
-  if (!plan) return null;
-
   const handleEdit = (task: Task) => {
     if (onEditTask) {
       onEditTask(task);
@@ -61,6 +59,8 @@ export function TaskList({ onEditTask, planId }: TaskListProps) {
     duplicateTask(taskId);
     toast.success('Task duplicated');
   }, [duplicateTask]);
+
+  if (!plan) return null;
 
   const searchLower = searchQuery.trim().toLowerCase();
   const filteredTasks = plan.tasks.filter((task) => {

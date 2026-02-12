@@ -96,10 +96,10 @@ The app uses **Microsoft Entra ID (Azure AD)** for SSO, with an optional **backu
 
 ## Technology Stack
 
-- **Framework**: Next.js 14+ with App Router
+- **Framework**: Next.js 16+ with App Router
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
-- **Gantt Chart**: frappe-gantt
+- **Gantt Chart**: Custom React Gantt timeline
 - **State Management**: Zustand
 - **Database (optional)**: Prisma + PostgreSQL
 - **Markdown**: react-markdown

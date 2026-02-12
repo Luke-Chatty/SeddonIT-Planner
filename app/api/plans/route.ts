@@ -6,6 +6,12 @@ import { getOwnerIdFromSession, getAccessiblePlanIds } from '@/lib/plan-access';
 import { hasDatabase } from '@/lib/db';
 import type { InfrastructurePlan } from '@/lib/types';
 
+function parseDateInput(value: unknown): Date | null {
+  if (typeof value !== 'string' || !value.trim()) return null;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
 /** GET: list plans the current user can access (owner or member). */
 export async function GET() {
   const session = await getSession();
@@ -54,13 +60,60 @@ export async function POST(request: NextRequest) {
   }
 
   const name = typeof body.name === 'string' ? body.name.trim() : '';
-  const startDate = body.startDate;
-  const endDate = body.endDate;
+  const startDate = parseDateInput(body.startDate);
+  const endDate = parseDateInput(body.endDate);
   if (!name || !startDate || !endDate) {
-    return NextResponse.json({ error: 'name, startDate, and endDate are required' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'Valid name, startDate, and endDate are required' },
+      { status: 400 }
+    );
   }
 
   const planId = typeof body.id === 'string' && body.id.trim() ? body.id.trim() : undefined;
+  const tasks = [];
+  for (const [index, task] of (body.tasks ?? []).entries()) {
+    const taskStart = parseDateInput(task.startDate);
+    const taskEnd = parseDateInput(task.endDate);
+    if (!taskStart || !taskEnd) {
+      return NextResponse.json(
+        { error: `Task ${index + 1} has an invalid startDate or endDate` },
+        { status: 400 }
+      );
+    }
+    tasks.push({
+      id: task.id,
+      title: task.title,
+      description: task.description ?? '',
+      startDate: taskStart,
+      endDate: taskEnd,
+      status: task.status,
+      priority: task.priority,
+      dependencies: task.dependencies ?? [],
+      assignedTo: task.assignedTo ?? null,
+      documentation: task.documentation ?? null,
+      scopeOfWorks: task.scopeOfWorks ?? null,
+      designInformation: task.designInformation ?? null,
+      order: task.order ?? 1,
+      parentId: task.parentId ?? null,
+    });
+  }
+
+  const milestones = [];
+  for (const [index, milestone] of (body.milestones ?? []).entries()) {
+    const milestoneDate = parseDateInput(milestone.date);
+    if (!milestoneDate) {
+      return NextResponse.json(
+        { error: `Milestone ${index + 1} has an invalid date` },
+        { status: 400 }
+      );
+    }
+    milestones.push({
+      id: milestone.id,
+      title: milestone.title,
+      date: milestoneDate,
+      description: milestone.description ?? null,
+    });
+  }
 
   try {
     const plan = await prisma.plan.create({
@@ -68,34 +121,14 @@ export async function POST(request: NextRequest) {
         ...(planId && { id: planId }),
         name,
         description: typeof body.description === 'string' ? body.description.trim() || null : null,
-        startDate: new Date(startDate),
-        endDate: new Date(endDate),
+        startDate,
+        endDate,
         ownerId,
         tasks: {
-          create: (body.tasks ?? []).map((t) => ({
-            id: t.id,
-            title: t.title,
-            description: t.description ?? '',
-            startDate: new Date(t.startDate),
-            endDate: new Date(t.endDate),
-            status: t.status,
-            priority: t.priority,
-            dependencies: t.dependencies ?? [],
-            assignedTo: t.assignedTo ?? null,
-            documentation: t.documentation ?? null,
-            scopeOfWorks: t.scopeOfWorks ?? null,
-            designInformation: t.designInformation ?? null,
-            order: t.order ?? 1,
-            parentId: t.parentId ?? null,
-          })),
+          create: tasks,
         },
         milestones: {
-          create: (body.milestones ?? []).map((m) => ({
-            id: m.id,
-            title: m.title,
-            date: new Date(m.date),
-            description: m.description ?? null,
-          })),
+          create: milestones,
         },
       },
       include: { tasks: true, milestones: true },
