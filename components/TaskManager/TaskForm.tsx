@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Task } from '@/lib/types';
 import { Input } from '../UI/Input';
 import { Textarea } from '../UI/Textarea';
@@ -8,8 +8,10 @@ import { Select } from '../UI/Select';
 import { Button } from '../UI/Button';
 import { RichTextEditor } from '../UI/RichTextEditor';
 import { usePlanStore } from '@/lib/store';
+import { searchDirectory, type DirectoryUser } from '@/lib/api';
 import { Calendar, CheckCircle2, AlertCircle, Clock, Save, X, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { addDays, parseISO, format, isValid } from 'date-fns';
 
 interface TaskFormProps {
   task?: Task | null;
@@ -33,6 +35,11 @@ export function TaskForm({ task, onClose, onSave, readOnly = false }: TaskFormPr
     scopeOfWorks: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [assignSearch, setAssignSearch] = useState('');
+  const [assignResults, setAssignResults] = useState<DirectoryUser[]>([]);
+  const [assignDropdownOpen, setAssignDropdownOpen] = useState(false);
+  const assignDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const assignContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (task) {
@@ -47,8 +54,17 @@ export function TaskForm({ task, onClose, onSave, readOnly = false }: TaskFormPr
         dependencies: task.dependencies,
         scopeOfWorks: task.scopeOfWorks || '',
       });
+    } else if (plan) {
+      const planStart = plan.startDate.split('T')[0];
+      const start = new Date(planStart);
+      const end = addDays(start, 14);
+      setFormData((prev) => ({
+        ...prev,
+        startDate: planStart,
+        endDate: format(end, 'yyyy-MM-dd'),
+      }));
     }
-  }, [task]);
+  }, [task, plan]);
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -112,6 +128,44 @@ export function TaskForm({ task, onClose, onSave, readOnly = false }: TaskFormPr
   };
 
   const availableTasks = plan?.tasks.filter(t => t.id !== task?.id) || [];
+  const selectedDependencyTasks = availableTasks.filter((t) => formData.dependencies.includes(t.id));
+
+  const runAssignSearch = useCallback((q: string) => {
+    if (q.trim().length < 2) {
+      setAssignResults([]);
+      return;
+    }
+    searchDirectory(q).then(setAssignResults).catch(() => setAssignResults([]));
+  }, []);
+  useEffect(() => {
+    if (assignDebounceRef.current) clearTimeout(assignDebounceRef.current);
+    const q = assignSearch.trim();
+    if (q.length < 2) {
+      setAssignResults([]);
+      setAssignDropdownOpen(false);
+      return;
+    }
+    assignDebounceRef.current = setTimeout(() => {
+      runAssignSearch(q);
+      setAssignDropdownOpen(true);
+    }, 300);
+    return () => { if (assignDebounceRef.current) clearTimeout(assignDebounceRef.current); };
+  }, [assignSearch, runAssignSearch]);
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (assignContainerRef.current && !assignContainerRef.current.contains(e.target as Node)) setAssignDropdownOpen(false);
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  const setDurationWeeks = (weeks: number) => {
+    if (!formData.startDate) return;
+    const start = parseISO(formData.startDate);
+    if (!isValid(start)) return;
+    const end = addDays(start, weeks * 7);
+    setFormData({ ...formData, endDate: format(end, 'yyyy-MM-dd') });
+  };
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col h-full space-y-6">
@@ -167,15 +221,36 @@ export function TaskForm({ task, onClose, onSave, readOnly = false }: TaskFormPr
                 required
                 disabled={readOnly}
               />
-              <Input
-                label="End Date"
-                type="date"
-                value={formData.endDate}
-                onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                error={errors.endDate}
-                required
-                disabled={readOnly}
-              />
+              <div>
+                <Input
+                  label="End Date"
+                  type="date"
+                  value={formData.endDate}
+                  onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                  error={errors.endDate}
+                  required
+                  disabled={readOnly}
+                />
+                {!readOnly && formData.startDate && (
+                  <p className="text-xs text-muted-foreground mt-1 mb-2">Quick duration from start:</p>
+                )}
+                {!readOnly && formData.startDate && (
+                  <div className="flex flex-wrap gap-2">
+                    {[1, 2, 3, 4].map((w) => (
+                      <Button
+                        key={w}
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="text-xs"
+                        onClick={() => setDurationWeeks(w)}
+                      >
+                        {w} week{w > 1 ? 's' : ''}
+                      </Button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -211,17 +286,54 @@ export function TaskForm({ task, onClose, onSave, readOnly = false }: TaskFormPr
             </div>
           </div>
 
-          <div className="space-y-4 bg-muted/30 p-4 rounded-xl border border-border/50">
+          <div className="space-y-4 bg-muted/30 p-4 rounded-xl border border-border/50" ref={assignContainerRef}>
             <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
               <User className="w-4 h-4" /> Assignment
             </h3>
-            <Input
-              label="Assigned To"
-              value={formData.assignedTo}
-              onChange={(e) => setFormData({ ...formData, assignedTo: e.target.value })}
-              placeholder="Team or person name"
-              disabled={readOnly}
-            />
+            <div className="relative">
+              <Input
+                label="Assigned To"
+                value={assignDropdownOpen || assignResults.length ? assignSearch : (assignSearch || formData.assignedTo)}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setAssignSearch(v);
+                  if (!v) setFormData({ ...formData, assignedTo: '' });
+                }}
+                onFocus={() => { if (formData.assignedTo) setAssignSearch(formData.assignedTo); }}
+                onBlur={() => {
+                  if (assignSearch.trim()) setFormData((prev) => ({ ...prev, assignedTo: assignSearch.trim() }));
+                }}
+                placeholder="Search name or email, or type a name"
+                disabled={readOnly}
+              />
+              {assignDropdownOpen && assignResults.length > 0 && !readOnly && (
+                <ul
+                  className="absolute z-50 mt-1 w-full max-h-48 overflow-auto rounded-lg border border-border bg-background shadow-lg py-1"
+                  role="listbox"
+                >
+                  {assignResults.map((u) => (
+                    <li
+                      key={u.id}
+                      role="option"
+                      className="px-3 py-2 text-sm cursor-pointer hover:bg-muted flex items-center gap-2"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        setFormData((prev) => ({ ...prev, assignedTo: u.mail }));
+                        setAssignSearch(u.displayName ? `${u.displayName} (${u.mail})` : u.mail);
+                        setAssignDropdownOpen(false);
+                        setAssignResults([]);
+                      }}
+                    >
+                      <span className="flex h-8 w-8 rounded-full bg-muted items-center justify-center text-xs font-medium">
+                        {(u.displayName || u.mail || '?').slice(0, 2).toUpperCase()}
+                      </span>
+                      <span className="truncate">{u.displayName || u.mail}</span>
+                      {u.jobTitle && <span className="text-muted-foreground text-xs truncate">{u.jobTitle}</span>}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
 
           <div className="space-y-4">
@@ -239,7 +351,35 @@ export function TaskForm({ task, onClose, onSave, readOnly = false }: TaskFormPr
           {availableTasks.length > 0 && (
             <div className="space-y-4">
               <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Dependencies</h3>
-              <div className="space-y-2 max-h-48 overflow-y-auto border border-border rounded-lg p-2 bg-muted/10 custom-scrollbar">
+              <p className="text-xs text-muted-foreground">
+                Tasks that must be completed before this one can start. This task will wait for the selected tasks.
+              </p>
+              {selectedDependencyTasks.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {selectedDependencyTasks.map((t) => (
+                    <span
+                      key={t.id}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200 border border-amber-200 dark:border-amber-700"
+                    >
+                      {t.title}
+                      {!readOnly && (
+                        <button
+                          type="button"
+                          onClick={() => setFormData({
+                            ...formData,
+                            dependencies: formData.dependencies.filter((id) => id !== t.id),
+                          })}
+                          className="hover:bg-amber-200 dark:hover:bg-amber-800 rounded-full p-0.5"
+                          aria-label={`Remove ${t.title} from dependencies`}
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      )}
+                    </span>
+                  ))}
+                </div>
+              )}
+              <div className="space-y-2 max-h-40 overflow-y-auto border border-border rounded-lg p-2 bg-muted/10 custom-scrollbar">
                 {availableTasks.map((t) => (
                   <label key={t.id} className={cn('flex items-center gap-2 p-2 rounded transition-colors', !readOnly && 'cursor-pointer hover:bg-muted/50')}>
                     <input
@@ -261,7 +401,7 @@ export function TaskForm({ task, onClose, onSave, readOnly = false }: TaskFormPr
                       className="rounded border-brand-cyan text-brand-navy focus:ring-brand-cyan h-4 w-4"
                       disabled={readOnly}
                     />
-                    <span className="text-sm text-foreground font-medium">{t.title}</span>
+                    <span className="text-sm text-foreground font-medium truncate">{t.title}</span>
                   </label>
                 ))}
               </div>
@@ -271,20 +411,22 @@ export function TaskForm({ task, onClose, onSave, readOnly = false }: TaskFormPr
 
         {/* RIGHT COLUMN: Scope of Works (9 cols) */}
         <div className="lg:col-span-9 flex flex-col h-full overflow-hidden">
-          <label className="block text-sm font-bold text-foreground mb-4 uppercase tracking-widest flex items-center gap-2">
-            <AlertCircle className="w-4 h-4" /> Detailed Scope of Works
-          </label>
-          <div className={cn('flex-1 border border-border rounded-xl overflow-hidden bg-white dark:bg-slate-900 shadow-sm flex flex-col', readOnly && 'pointer-events-none opacity-90')}>
+          <div className="mb-3">
+            <label className="block text-sm font-bold text-foreground uppercase tracking-widest flex items-center gap-2">
+              <AlertCircle className="w-4 h-4" /> Detailed Scope of Works
+            </label>
+            <p className="text-xs text-muted-foreground mt-1">
+              Describe deliverables, acceptance criteria, and any tables or diagrams. Use headings and lists to structure the content.
+            </p>
+          </div>
+          <div className={cn('flex-1 min-h-[280px] flex flex-col', readOnly && 'pointer-events-none opacity-90')}>
             <RichTextEditor
               content={formData.scopeOfWorks}
               onChange={(content) => setFormData({ ...formData, scopeOfWorks: content })}
-              placeholder="Enter detailed scope, insert tables, images, or diagrams here..."
-              className="flex-1 h-full overflow-y-auto border-0 focus-visible:ring-0 p-4"
+              placeholder="e.g. ## Deliverables — list items, ## Acceptance criteria — what must be met. Use the toolbar for bold, headings, and lists."
+              className="flex-1 min-h-[260px] overflow-y-auto border border-border rounded-xl focus-within:ring-2 focus-within:ring-primary/20"
             />
           </div>
-          <p className="text-xs text-muted-foreground mt-2 text-right">
-            Supports rich text, tables, and images.
-          </p>
         </div>
 
       </div>

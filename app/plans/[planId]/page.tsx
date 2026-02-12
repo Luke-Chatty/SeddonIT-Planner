@@ -24,10 +24,11 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
-import { Share2 } from 'lucide-react';
+import { Share2, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { AppHeader } from '@/components/AppHeader';
 import { SharePlanModal } from '@/components/SharePlanModal';
+import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { exportPlanToFile, importPlanFromFile, exportGanttAsImage, exportGanttAsPDF } from '@/lib/storage';
 import { Task } from '@/lib/types';
 
@@ -261,6 +262,18 @@ export default function PlanDetailPage() {
         onClose={() => setShareModalOpen(false)}
       />
 
+      {/* Breadcrumbs - only when plan loaded */}
+      {plan && (
+        <div className="flex-shrink-0 px-6 py-2 border-b border-slate-200/50 dark:border-white/5 bg-white/50 dark:bg-[#022943]/50">
+          <Breadcrumbs
+            items={[
+              { label: 'My Plans', href: '/' },
+              { label: plan.name, href: `/plans/${planId}` },
+            ]}
+          />
+        </div>
+      )}
+
       {/* Stats Dashboard */}
       <div className="flex-shrink-0 px-6 py-4 border-b border-slate-200 dark:border-white/10 bg-white/80 dark:bg-[#022943]/80 backdrop-blur-xl shadow-sm">
         <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -293,32 +306,42 @@ export default function PlanDetailPage() {
         >
           {leftSidebarOpen && (
             <div className="h-full flex flex-col">
-              <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-white/10">
-                <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-bold text-[#022943] dark:text-white flex items-center gap-2">
-                    <List className="w-5 h-5 text-[#022943] dark:text-[#4ebec7]" />
+              <div className="flex items-center justify-between p-3 border-b border-slate-200 dark:border-white/10">
+                <div className="flex items-center gap-2 min-w-0">
+                  <h2 className="text-base font-bold text-[#022943] dark:text-white flex items-center gap-2 shrink-0">
+                    <List className="w-4 h-4 text-[#022943] dark:text-[#4ebec7]" />
                     Tasks
                   </h2>
                   <Button
+                    variant="primary"
+                    size="sm"
+                    className="shrink-0 h-8 px-2.5 text-xs font-medium"
+                    onClick={() => { setEditingTask(null); setIsTaskFormOpen(true); }}
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Task
+                  </Button>
+                  <Button
                     variant="ghost"
                     size="sm"
-                    className="text-xs px-2 py-1"
+                    className="shrink-0 text-xs px-2 py-1 h-8"
                     onClick={() => router.push(`/plans/${planId}/tasks`)}
                   >
-                    Manage Tasks
+                    Manage
                   </Button>
                 </div>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setLeftSidebarOpen(false)}
-                  className="p-1"
+                  className="p-1.5 shrink-0"
+                  aria-label="Collapse sidebar"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
               </div>
               <div className="flex-1 overflow-hidden">
-                <TaskList onEditTask={(task) => router.push(`/plans/${planId}/tasks/${task.id}`)} />
+                <TaskList planId={planId} onEditTask={(task) => router.push(`/plans/${planId}/tasks/${task.id}`)} />
               </div>
             </div>
           )}

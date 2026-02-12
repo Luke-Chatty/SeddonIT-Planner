@@ -29,9 +29,11 @@ export function QuickActions({ onAddTask, onExport, onImport, canEdit = true }: 
             onClick={onImport}
             variant="ghost"
             size="sm"
-            className="p-2"
+            className="h-9 w-9 p-0 min-w-[2.25rem]"
+            title="Import plan"
+            aria-label="Import plan"
           >
-            <Upload className="w-4 h-4" />
+            <Upload className="w-5 h-5" />
           </Button>
         </>
       )}
@@ -39,9 +41,11 @@ export function QuickActions({ onAddTask, onExport, onImport, canEdit = true }: 
         onClick={onExport}
         variant="ghost"
         size="sm"
-        className="p-2"
+        className="h-9 w-9 p-0 min-w-[2.25rem]"
+        title="Export"
+        aria-label="Export"
       >
-        <Download className="w-4 h-4" />
+        <Download className="w-5 h-5" />
       </Button>
     </div>
   );

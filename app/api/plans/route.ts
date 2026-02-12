@@ -3,11 +3,8 @@ import { getSession } from '@/lib/auth-server';
 import { prisma } from '@/lib/prisma';
 import { prismaPlanToPlan } from '@/lib/db-plan';
 import { getOwnerIdFromSession, getAccessiblePlanIds } from '@/lib/plan-access';
+import { hasDatabase } from '@/lib/db';
 import type { InfrastructurePlan } from '@/lib/types';
-
-function hasDatabase(): boolean {
-  return Boolean(process.env.DATABASE_URL);
-}
 
 /** GET: list plans the current user can access (owner or member). */
 export async function GET() {

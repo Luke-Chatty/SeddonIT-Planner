@@ -1,4 +1,4 @@
-import { InfrastructurePlan, Task, PlansCollection } from './types';
+import { InfrastructurePlan, Task, Milestone, PlansCollection } from './types';
 
 const STORAGE_KEY = 'infrastructure-plans';
 const PLAN_FILE_NAME = 'infrastructure-plan.json';
@@ -114,11 +114,31 @@ export function importPlanFromFile(file: File): Promise<InfrastructurePlan> {
     reader.onload = (e) => {
       try {
         const content = e.target?.result as string;
-        const plan = JSON.parse(content) as InfrastructurePlan;
-        // Validate plan structure
-        if (!plan.name || !plan.tasks || !Array.isArray(plan.tasks)) {
-          throw new Error('Invalid plan file format');
+        const raw = JSON.parse(content) as Record<string, unknown>;
+        if (!raw || typeof raw !== 'object') throw new Error('Invalid plan file format');
+        const name = typeof raw.name === 'string' ? raw.name.trim() : '';
+        const startDate = raw.startDate;
+        const endDate = raw.endDate;
+        if (!name) throw new Error('Plan must have a name');
+        if (!startDate || !endDate) throw new Error('Plan must have startDate and endDate');
+        const start = new Date(startDate as string);
+        const end = new Date(endDate as string);
+        if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+          throw new Error('startDate and endDate must be valid dates');
         }
+        const tasks = Array.isArray(raw.tasks) ? raw.tasks : [];
+        const milestones = Array.isArray(raw.milestones) ? raw.milestones : [];
+        const plan: InfrastructurePlan = {
+          id: typeof raw.id === 'string' ? raw.id : generatePlanId(),
+          name,
+          description: typeof raw.description === 'string' ? raw.description : undefined,
+          startDate: start.toISOString(),
+          endDate: end.toISOString(),
+          tasks: tasks as Task[],
+          milestones: milestones as Milestone[],
+          createdAt: typeof raw.createdAt === 'string' ? raw.createdAt : new Date().toISOString(),
+          updatedAt: typeof raw.updatedAt === 'string' ? raw.updatedAt : new Date().toISOString(),
+        };
         resolve(plan);
       } catch (error) {
         reject(error);

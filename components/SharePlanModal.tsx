@@ -4,6 +4,8 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { Modal } from '@/components/UI/Modal';
 import { Input } from '@/components/UI/Input';
 import { Button } from '@/components/UI/Button';
+import { Select } from '@/components/UI/Select';
+import { ConfirmModal } from '@/components/UI/ConfirmModal';
 import {
   fetchPlanMembers,
   invitePlanMember,
@@ -38,6 +40,7 @@ export function SharePlanModal({ planId, onClose }: SharePlanModalProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [inviteRole, setInviteRole] = useState<'EDITOR' | 'VIEWER'>('VIEWER');
   const [error, setError] = useState('');
+  const [removeTarget, setRemoveTarget] = useState<{ userId: string; name: string } | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -112,15 +115,21 @@ export function SharePlanModal({ planId, onClose }: SharePlanModalProps) {
     }
   };
 
-  const handleRemove = async (userId: string) => {
-    if (!planId) return;
+  const handleRemoveClick = (m: PlanMemberItem) => {
+    setRemoveTarget({ userId: m.userId, name: m.name || m.email || m.userId });
+  };
+
+  const handleRemoveConfirm = async () => {
+    if (!planId || !removeTarget) return;
     setError('');
     try {
-      await removePlanMember(planId, userId);
+      await removePlanMember(planId, removeTarget.userId);
       const list = await fetchPlanMembers(planId);
       setMembers(list);
+      setRemoveTarget(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to remove');
+      setRemoveTarget(null);
     }
   };
 
@@ -225,14 +234,15 @@ export function SharePlanModal({ planId, onClose }: SharePlanModalProps) {
               </ul>
             )}
           </div>
-          <select
+          <Select
+            options={[
+              { value: 'VIEWER', label: 'Viewer' },
+              { value: 'EDITOR', label: 'Editor' },
+            ]}
             value={inviteRole}
             onChange={(e) => setInviteRole(e.target.value as 'EDITOR' | 'VIEWER')}
-            className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#022943] px-3 py-2 text-sm text-[#022943] dark:text-white"
-          >
-            <option value="VIEWER">Viewer</option>
-            <option value="EDITOR">Editor</option>
-          </select>
+            className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#022943] px-3 py-2 text-sm text-[#022943] dark:text-white min-w-[100px]"
+          />
           <Button variant="primary" onClick={handleInvite} disabled={!canInvite}>
             Invite
           </Button>
@@ -251,7 +261,7 @@ export function SharePlanModal({ planId, onClose }: SharePlanModalProps) {
                       variant="ghost"
                       size="sm"
                       className="h-7 text-[#ed1c24] hover:bg-[#ed1c24]/10"
-                      onClick={() => handleRemove(m.userId)}
+                      onClick={() => handleRemoveClick(m)}
                     >
                       Remove
                     </Button>
@@ -262,6 +272,15 @@ export function SharePlanModal({ planId, onClose }: SharePlanModalProps) {
           </ul>
         </div>
       </div>
+      <ConfirmModal
+        open={!!removeTarget}
+        onClose={() => setRemoveTarget(null)}
+        onConfirm={handleRemoveConfirm}
+        title="Remove access?"
+        message={removeTarget ? `Remove ${removeTarget.name} from this plan? They will no longer be able to view or edit it.` : ''}
+        confirmLabel="Remove"
+        variant="danger"
+      />
     </Modal>
   );
 }

@@ -26,9 +26,13 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Plus, Filter, GripVertical } from 'lucide-react';
+import { Plus, Filter, GripVertical, Search } from 'lucide-react';
 import { getTaskNumber } from '@/lib/utils';
 import { AppHeader } from '@/components/AppHeader';
+import { Breadcrumbs } from '@/components/Breadcrumbs';
+import { toast } from 'sonner';
+
+const FILTER_STORAGE_KEY = 'seddon-planner-task-filters';
 
 interface SortableTaskCardProps {
   task: Task;
@@ -37,6 +41,7 @@ interface SortableTaskCardProps {
   onSelect: (task: Task) => void;
   onEdit: (task: Task) => void;
   onDelete: (taskId: string) => void;
+  onDuplicate?: (taskId: string) => void;
   isSelected: boolean;
   readOnly?: boolean;
 }
@@ -48,6 +53,7 @@ function SortableTaskCard({
   onSelect,
   onEdit,
   onDelete,
+  onDuplicate,
   isSelected,
   readOnly = false,
 }: SortableTaskCardProps) {
@@ -80,6 +86,7 @@ function SortableTaskCard({
           onSelect={onSelect}
           onEdit={onEdit}
           onDelete={onDelete}
+          onDuplicate={onDuplicate}
           isSelected={isSelected}
           readOnly={readOnly}
         />
@@ -93,12 +100,39 @@ export default function PlanTasksPage() {
   const router = useRouter();
   const planId = params.planId as string;
 
-  const { plan, planRole, selectedTaskId, setSelectedTask, deleteTask, reorderTasks, loadPlan, isLoading } = usePlanStore();
+  const { plan, planRole, selectedTaskId, setSelectedTask, deleteTask, reorderTasks, duplicateTask, loadPlan, isLoading } = usePlanStore();
   const canEdit = planRole === 'OWNER' || planRole === 'EDITOR';
+  const storageKey = `${FILTER_STORAGE_KEY}-${planId}`;
+
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const raw = sessionStorage.getItem(storageKey);
+      if (raw) {
+        const parsed = JSON.parse(raw) as { status?: string; priority?: string; search?: string };
+        if (parsed.status) setStatusFilter(parsed.status);
+        if (parsed.priority) setPriorityFilter(parsed.priority);
+        if (parsed.search) setSearchQuery(parsed.search || '');
+      }
+    } catch {}
+  }, [storageKey]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      sessionStorage.setItem(storageKey, JSON.stringify({
+        status: statusFilter,
+        priority: priorityFilter,
+        search: searchQuery,
+      }));
+    } catch {}
+  }, [storageKey, statusFilter, priorityFilter, searchQuery]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -169,27 +203,35 @@ export default function PlanTasksPage() {
     setEditingTask(null);
   };
 
+  const searchLower = searchQuery.trim().toLowerCase();
   const filteredTasks = plan.tasks.filter((task) => {
     if (statusFilter !== 'all' && task.status !== statusFilter) return false;
     if (priorityFilter !== 'all' && task.priority !== priorityFilter) return false;
+    if (searchLower) {
+      const titleMatch = task.title.toLowerCase().includes(searchLower);
+      const descMatch = (task.description || '').toLowerCase().includes(searchLower);
+      if (!titleMatch && !descMatch) return false;
+    }
     return true;
   });
 
-  // Sort by order
+  // Sort by order (full list for reorder; filtered for display)
+  const fullSortedTasks = [...plan.tasks].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   const sortedTasks = [...filteredTasks].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
   const handleDragEnd = (event: DragEndEvent) => {
     if (!canEdit) return;
     const { active, over } = event;
+    if (!over || active.id === over.id) return;
 
-    if (over && active.id !== over.id) {
-      const oldIndex = sortedTasks.findIndex((task) => task.id === active.id);
-      const newIndex = sortedTasks.findIndex((task) => task.id === over.id);
+    const oldIndexInFull = fullSortedTasks.findIndex((t) => t.id === active.id);
+    const newIndexInFull = fullSortedTasks.findIndex((t) => t.id === over.id);
+    if (oldIndexInFull === -1 || newIndexInFull === -1) return;
 
-      const newOrder = arrayMove(sortedTasks, oldIndex, newIndex);
-      const taskIds = newOrder.map((task) => task.id);
-      reorderTasks(taskIds);
-    }
+    const newOrder = arrayMove(fullSortedTasks, oldIndexInFull, newIndexInFull);
+    const taskIds = newOrder.map((t) => t.id);
+    reorderTasks(taskIds);
+    toast.success('Task order saved. Order is used in the list and task numbers; Gantt shows by date.');
   };
 
   return (
@@ -197,10 +239,19 @@ export default function PlanTasksPage() {
       <div className="fixed inset-0 -z-10 bg-[url('/grain.png')] opacity-[0.03] pointer-events-none" />
       <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#022943]/5 dark:bg-blue-500/10 blur-[120px] rounded-full pointer-events-none -z-10" />
 
+      <div className="px-6 pt-4 pb-2">
+        <Breadcrumbs
+          items={[
+            { label: 'My Plans', href: '/' },
+            { label: plan.name, href: `/plans/${planId}` },
+            { label: 'Tasks' },
+          ]}
+        />
+      </div>
       <AppHeader
         backHref={`/plans/${planId}`}
         title="Task Management"
-        subtitle={`${plan.name} • Drag and drop to reorder tasks`}
+        subtitle={`${plan.name} • Drag to reorder (saved automatically)`}
         showLogo={false}
       >
         {canEdit && (
@@ -218,41 +269,54 @@ export default function PlanTasksPage() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-6 py-6">
-        {/* Filters */}
-        <div className="mb-6 p-4 rounded-[20px] border border-slate-200 dark:border-white/10 bg-white/95 dark:bg-[#022943]/95 backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.08)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.2)]">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-[#022943] dark:text-[#4ebec7]" />
-              <span className="text-sm font-medium text-[#022943] dark:text-white">Filters:</span>
-            </div>
-            <Select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              options={[
-                { value: 'all', label: 'All Status' },
-                { value: 'not-started', label: 'Not Started' },
-                { value: 'in-progress', label: 'In Progress' },
-                { value: 'completed', label: 'Completed' },
-                { value: 'blocked', label: 'Blocked' },
-              ]}
-              className="w-48"
+        {/* Filters - sticky bar */}
+        <div className="sticky top-0 z-10 mb-4 py-3 px-4 rounded-xl border border-slate-200 dark:border-white/10 bg-white/95 dark:bg-[#022943]/95 backdrop-blur-xl shadow-sm flex flex-wrap items-center gap-3">
+          <div className="relative flex-1 min-w-[160px] max-w-xs">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search tasks..."
+              className="w-full pl-8 pr-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#022943]/80"
             />
-            <Select
-              value={priorityFilter}
-              onChange={(e) => setPriorityFilter(e.target.value)}
-              options={[
-                { value: 'all', label: 'All Priority' },
-                { value: 'low', label: 'Low' },
-                { value: 'medium', label: 'Medium' },
-                { value: 'high', label: 'High' },
-                { value: 'critical', label: 'Critical' },
-              ]}
-              className="w-48"
-            />
-            <div className="ml-auto text-sm text-slate-600 dark:text-slate-400">
-              {sortedTasks.length} of {plan.tasks.length} tasks
-            </div>
           </div>
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4 text-[#022943] dark:text-[#4ebec7]" />
+            <span className="text-sm font-medium text-[#022943] dark:text-white">Filters</span>
+          </div>
+          <Select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            options={[
+              { value: 'all', label: 'All status' },
+              { value: 'not-started', label: 'Not started' },
+              { value: 'in-progress', label: 'In progress' },
+              { value: 'completed', label: 'Completed' },
+              { value: 'blocked', label: 'Blocked' },
+            ]}
+            className="w-40"
+          />
+          <Select
+            value={priorityFilter}
+            onChange={(e) => setPriorityFilter(e.target.value)}
+            options={[
+              { value: 'all', label: 'All priority' },
+              { value: 'low', label: 'Low' },
+              { value: 'medium', label: 'Medium' },
+              { value: 'high', label: 'High' },
+              { value: 'critical', label: 'Critical' },
+            ]}
+            className="w-40"
+          />
+          <span className="text-sm text-slate-500 dark:text-slate-400">
+            {sortedTasks.length} of {plan.tasks.length} tasks
+          </span>
+          {canEdit && (statusFilter !== 'all' || priorityFilter !== 'all') && (
+            <span className="text-xs text-slate-500 dark:text-slate-400">
+              Order is saved for the full list; clear filters to see final order.
+            </span>
+          )}
         </div>
 
         {/* Task List */}
@@ -265,7 +329,7 @@ export default function PlanTasksPage() {
             items={sortedTasks.map((t) => t.id)}
             strategy={verticalListSortingStrategy}
           >
-            <div className="space-y-4">
+            <div className="space-y-3">
               {sortedTasks.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 text-center rounded-[20px] border border-slate-200 dark:border-white/10 bg-white dark:bg-[#022943] shadow-[0_20px_50px_rgba(0,0,0,0.08)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.2)]">
                   <div className="w-20 h-20 rounded-full bg-[#022943]/10 dark:bg-[#4ebec7]/20 flex items-center justify-center mb-4">
@@ -295,6 +359,7 @@ export default function PlanTasksPage() {
                       router.push(`/plans/${planId}/tasks/${task.id}`);
                     }}
                     onDelete={deleteTask}
+                    onDuplicate={canEdit ? (id) => { duplicateTask(id); toast.success('Task duplicated'); } : undefined}
                     isSelected={task.id === selectedTaskId}
                     readOnly={!canEdit}
                   />

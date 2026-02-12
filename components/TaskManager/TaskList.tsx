@@ -1,22 +1,53 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { usePlanStore } from '@/lib/store';
 import { Task } from '@/lib/types';
 import { TaskCard } from './TaskCard';
-import { Filter } from 'lucide-react';
+import { Filter, Search } from 'lucide-react';
 import { Select } from '../UI/Select';
 import { getTaskNumber } from '@/lib/utils';
+import { toast } from 'sonner';
+
+const FILTER_STORAGE_KEY = 'seddon-planner-task-filters';
 
 interface TaskListProps {
   onEditTask?: (task: Task) => void;
+  planId?: string;
 }
 
-export function TaskList({ onEditTask }: TaskListProps) {
-  const { plan, planRole, selectedTaskId, setSelectedTask, deleteTask } = usePlanStore();
+export function TaskList({ onEditTask, planId }: TaskListProps) {
+  const { plan, planRole, selectedTaskId, setSelectedTask, deleteTask, duplicateTask } = usePlanStore();
   const readOnly = planRole === 'VIEWER';
+  const storageKey = planId ? `${FILTER_STORAGE_KEY}-${planId}` : null;
+
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !storageKey) return;
+    try {
+      const raw = sessionStorage.getItem(storageKey);
+      if (raw) {
+        const parsed = JSON.parse(raw) as { status?: string; priority?: string; search?: string };
+        if (parsed.status) setStatusFilter(parsed.status);
+        if (parsed.priority) setPriorityFilter(parsed.priority);
+        if (parsed.search) setSearchQuery(parsed.search);
+      }
+    } catch {}
+  }, [storageKey]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !storageKey) return;
+    try {
+      sessionStorage.setItem(storageKey, JSON.stringify({
+        status: statusFilter,
+        priority: priorityFilter,
+        search: searchQuery,
+      }));
+    } catch {}
+  }, [storageKey, statusFilter, priorityFilter, searchQuery]);
 
   if (!plan) return null;
 
@@ -26,9 +57,20 @@ export function TaskList({ onEditTask }: TaskListProps) {
     }
   };
 
+  const handleDuplicate = useCallback((taskId: string) => {
+    duplicateTask(taskId);
+    toast.success('Task duplicated');
+  }, [duplicateTask]);
+
+  const searchLower = searchQuery.trim().toLowerCase();
   const filteredTasks = plan.tasks.filter((task) => {
     if (statusFilter !== 'all' && task.status !== statusFilter) return false;
     if (priorityFilter !== 'all' && task.priority !== priorityFilter) return false;
+    if (searchLower) {
+      const titleMatch = task.title.toLowerCase().includes(searchLower);
+      const descMatch = (task.description || '').toLowerCase().includes(searchLower);
+      if (!titleMatch && !descMatch) return false;
+    }
     return true;
   });
 
@@ -37,41 +79,49 @@ export function TaskList({ onEditTask }: TaskListProps) {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="p-4 border-b border-gray-200/60 dark:border-gray-800/60 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm">
-        <div className="mb-3">
-          <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">
-            {filteredTasks.length} of {plan.tasks.length} tasks
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            <Select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              options={[
-                { value: 'all', label: 'All Status' },
-                { value: 'not-started', label: 'Not Started' },
-                { value: 'in-progress', label: 'In Progress' },
-                { value: 'completed', label: 'Completed' },
-                { value: 'blocked', label: 'Blocked' },
-              ]}
-              className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 text-xs"
-            />
-            <Select
-              value={priorityFilter}
-              onChange={(e) => setPriorityFilter(e.target.value)}
-              options={[
-                { value: 'all', label: 'All Priority' },
-                { value: 'low', label: 'Low' },
-                { value: 'medium', label: 'Medium' },
-                { value: 'high', label: 'High' },
-                { value: 'critical', label: 'Critical' },
-              ]}
-              className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 text-xs"
-            />
-          </div>
+      <div className="flex-shrink-0 p-3 border-b border-slate-200/60 dark:border-white/10 bg-white/50 dark:bg-[#022943]/50 backdrop-blur-sm">
+        <div className="relative mb-2">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search tasks..."
+            className="w-full pl-8 pr-2 py-1.5 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-[#022943]/80"
+          />
+        </div>
+        <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">
+          {filteredTasks.length} of {plan.tasks.length} tasks
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          <Select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            options={[
+              { value: 'all', label: 'All status' },
+              { value: 'not-started', label: 'Not started' },
+              { value: 'in-progress', label: 'In progress' },
+              { value: 'completed', label: 'Completed' },
+              { value: 'blocked', label: 'Blocked' },
+            ]}
+            className="bg-white/80 dark:bg-[#022943]/80 border-slate-200/60 dark:border-white/10 text-xs"
+          />
+          <Select
+            value={priorityFilter}
+            onChange={(e) => setPriorityFilter(e.target.value)}
+            options={[
+              { value: 'all', label: 'All priority' },
+              { value: 'low', label: 'Low' },
+              { value: 'medium', label: 'Medium' },
+              { value: 'high', label: 'High' },
+              { value: 'critical', label: 'Critical' },
+            ]}
+            className="bg-white/80 dark:bg-[#022943]/80 border-slate-200/60 dark:border-white/10 text-xs"
+          />
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-3 space-y-3">
+      <div className="flex-1 overflow-y-auto p-2 space-y-2 min-h-0">
         {filteredTasks.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center px-4">
             <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/30 dark:to-purple-900/30 flex items-center justify-center mb-3">
@@ -95,6 +145,7 @@ export function TaskList({ onEditTask }: TaskListProps) {
               onSelect={(task) => setSelectedTask(task.id)}
               onEdit={handleEdit}
               onDelete={deleteTask}
+              onDuplicate={readOnly ? undefined : handleDuplicate}
               isSelected={task.id === selectedTaskId}
               readOnly={readOnly}
             />

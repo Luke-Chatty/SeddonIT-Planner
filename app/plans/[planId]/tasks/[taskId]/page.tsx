@@ -6,6 +6,7 @@ import { usePlanStore } from '@/lib/store';
 import { TaskForm } from '@/components/TaskManager/TaskForm';
 import { Button } from '@/components/UI/Button';
 import { AppHeader } from '@/components/AppHeader';
+import { Breadcrumbs } from '@/components/Breadcrumbs';
 
 export default function TaskDetailPage() {
     const params = useParams();
@@ -13,9 +14,10 @@ export default function TaskDetailPage() {
     const planId = params.planId as string;
     const taskId = params.taskId as string;
 
-    const { plan, planRole, loadPlan, isLoading } = usePlanStore();
+    const { plan, planRole, loadPlan, duplicateTask, isLoading } = usePlanStore();
     const [task, setTask] = useState<any>(null);
     const readOnly = planRole === 'VIEWER';
+    const canEdit = planRole === 'OWNER' || planRole === 'EDITOR';
 
     useEffect(() => {
         if (typeof window !== 'undefined' && planId) {
@@ -78,6 +80,25 @@ export default function TaskDetailPage() {
             <div className="fixed inset-0 -z-10 bg-[url('/grain.png')] opacity-[0.03] pointer-events-none" />
             <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#022943]/5 dark:bg-blue-500/10 blur-[120px] rounded-full pointer-events-none -z-10" />
 
+            <div className="px-6 pt-4 pb-2 flex items-center justify-between gap-4 flex-wrap">
+                <Breadcrumbs
+                    items={[
+                        { label: 'My Plans', href: '/' },
+                        { label: plan.name, href: `/plans/${planId}` },
+                        { label: 'Tasks', href: `/plans/${planId}/tasks` },
+                        { label: task.title },
+                    ]}
+                />
+                {canEdit && (
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => { duplicateTask(task.id); router.push(`/plans/${planId}/tasks`); }}
+                    >
+                        Duplicate task
+                    </Button>
+                )}
+            </div>
             <AppHeader
                 backHref={`/plans/${planId}`}
                 title={task.title}

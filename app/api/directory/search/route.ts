@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth-server';
 import { getPrisma } from '@/lib/prisma';
+import { getGraphAccessToken, hasAzureGraphConfig } from '@/lib/azure-graph';
 
 export type DirectoryUser = {
   id: string;
@@ -9,10 +10,6 @@ export type DirectoryUser = {
   jobTitle?: string | null;
   source: 'graph' | 'database';
 };
-
-const hasAzureConfig =
-  Boolean(process.env.AZURE_AD_CLIENT_ID) &&
-  Boolean(process.env.AZURE_AD_CLIENT_SECRET);
 
 /** Comma-separated group display names (e.g. allscl,allhomes) – only users in these groups are searchable. Defaults to allscl,allhomes. */
 const groupNames = (process.env.AZURE_AD_GROUP_NAMES ?? 'allscl,allhomes')
@@ -25,26 +22,6 @@ const groupIdsFromEnv = (process.env.AZURE_AD_GROUP_IDS ?? '')
   .map((s) => s.trim())
   .filter(Boolean);
 const restrictToGroups = groupNames.length > 0 || groupIdsFromEnv.length > 0;
-
-async function getGraphAccessToken(): Promise<string | null> {
-  if (!hasAzureConfig) return null;
-  const tenant = process.env.AZURE_AD_TENANT_ID ?? 'common';
-  const url = `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`;
-  const body = new URLSearchParams({
-    client_id: process.env.AZURE_AD_CLIENT_ID!,
-    client_secret: process.env.AZURE_AD_CLIENT_SECRET!,
-    scope: 'https://graph.microsoft.com/.default',
-    grant_type: 'client_credentials',
-  });
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: body.toString(),
-  });
-  if (!res.ok) return null;
-  const data = await res.json();
-  return data.access_token ?? null;
-}
 
 const graphHeaders = (token: string) => ({
   Authorization: `Bearer ${token}`,
@@ -219,14 +196,14 @@ export async function GET(request: NextRequest) {
   }
 
   const trimmed = q.trim();
-  const graphSearch = hasAzureConfig
+  const graphSearch = hasAzureGraphConfig()
     ? restrictToGroups
       ? searchGraphUsersInGroups(trimmed)
       : searchGraphUsersAll(trimmed)
     : Promise.resolve([]);
   const [graphUsers, dbUsers] = await Promise.all([graphSearch, searchPrismaUsers(trimmed)]);
 
-  const users = hasAzureConfig ? mergeUsers(graphUsers, dbUsers) : dbUsers;
+  const users = hasAzureGraphConfig() ? mergeUsers(graphUsers, dbUsers) : dbUsers;
 
   return NextResponse.json({ users });
 }

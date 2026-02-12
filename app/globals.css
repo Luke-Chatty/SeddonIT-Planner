@@ -99,7 +99,7 @@
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: var(--font-inter), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
@@ -166,7 +166,7 @@ body {
   }
 
   .font-display {
-    font-family: var(--font-rethink-sans, var(--font-inter)), sans-serif;
+    font-family: var(--font-display, var(--font-sans)), sans-serif;
   }
 }
 

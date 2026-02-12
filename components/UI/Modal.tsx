@@ -1,9 +1,12 @@
 'use client';
 
-import { ReactNode, useEffect } from 'react';
+import { ReactNode, useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 import { Button } from './Button';
 import { cn } from '@/lib/utils';
+
+const FOCUSABLE =
+  'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
 interface ModalProps {
   isOpen: boolean;
@@ -22,6 +25,9 @@ export function Modal({
   size = 'md',
   className,
 }: ModalProps) {
+  const panelRef = useRef<HTMLDivElement>(null);
+  const titleId = 'modal-title';
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -51,6 +57,12 @@ export function Modal({
     };
   }, [isOpen, onClose]);
 
+  useEffect(() => {
+    if (!isOpen || !panelRef.current) return;
+    const first = panelRef.current.querySelector<HTMLElement>(FOCUSABLE);
+    first?.focus();
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const sizes = {
@@ -65,8 +77,13 @@ export function Modal({
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm"
       onClick={onClose}
+      role="presentation"
     >
       <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={title ? titleId : undefined}
         className={cn(
           'bg-card text-card-foreground rounded-xl shadow-lg border border-border w-full animate-in fade-in zoom-in-95 duration-200',
           sizes[size],
@@ -76,7 +93,7 @@ export function Modal({
       >
         {title && (
           <div className="flex items-center justify-between p-6 border-b border-border">
-            <h2 className="text-xl font-semibold tracking-tight">
+            <h2 id={titleId} className="text-xl font-semibold tracking-tight">
               {title}
             </h2>
             <Button
@@ -84,12 +101,13 @@ export function Modal({
               size="sm"
               onClick={onClose}
               className="p-1 h-8 w-8 rounded-full"
+              aria-label="Close"
             >
               <X className="w-5 h-5" />
             </Button>
           </div>
         )}
-        <div className={cn("p-6", size === 'full' && "flex-1 overflow-auto")}>{children}</div>
+        <div className={cn('p-6', size === 'full' && 'flex-1 overflow-auto')}>{children}</div>
       </div>
     </div>
   );

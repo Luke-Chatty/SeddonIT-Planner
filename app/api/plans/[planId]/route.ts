@@ -3,11 +3,8 @@ import { getSession } from '@/lib/auth-server';
 import { prisma } from '@/lib/prisma';
 import { prismaPlanToPlan } from '@/lib/db-plan';
 import { getPlanAccess, getOwnerIdFromSession } from '@/lib/plan-access';
+import { hasDatabase } from '@/lib/db';
 import type { InfrastructurePlan } from '@/lib/types';
-
-function hasDatabase(): boolean {
-  return Boolean(process.env.DATABASE_URL);
-}
 
 export async function GET(
   _request: NextRequest,

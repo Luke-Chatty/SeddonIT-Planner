@@ -26,18 +26,19 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
-        const email = process.env.BACKUP_ADMIN_EMAIL;
+        const envEmail = process.env.BACKUP_ADMIN_EMAIL?.toLowerCase().trim();
         const password = process.env.BACKUP_ADMIN_PASSWORD;
-        if (!email || !password || !credentials?.email || !credentials?.password) return null;
-        if (credentials.email !== email || credentials.password !== password) return null;
+        const inputEmail = credentials?.email?.toLowerCase().trim();
+        if (!envEmail || !password || !inputEmail || !credentials?.password) return null;
+        if (inputEmail !== envEmail || credentials.password !== password) return null;
 
         const prisma = getPrisma();
         if (!prisma) return null;
 
-        let user = await prisma.user.findUnique({ where: { email } });
+        let user = await prisma.user.findUnique({ where: { email: envEmail } });
         if (!user) {
           user = await prisma.user.create({
-            data: { email, name: email.split('@')[0] },
+            data: { email: envEmail, name: envEmail.split('@')[0] },
           });
         }
         return { id: user.id, email: user.email, name: user.name };

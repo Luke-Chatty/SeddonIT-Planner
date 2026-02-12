@@ -1,17 +1,17 @@
 import type { Metadata } from "next";
-import { Inter, Rethink_Sans } from "next/font/google";
+import { Source_Sans_3, Plus_Jakarta_Sans } from "next/font/google";
 import { Providers } from "@/components/Providers";
 import "./globals.css";
 
-const inter = Inter({
+const sourceSans = Source_Sans_3({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-sans",
   display: "swap",
 });
 
-const rethinkSans = Rethink_Sans({
+const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
-  variable: "--font-rethink-sans",
+  variable: "--font-display",
   display: "swap",
 });
 
@@ -28,7 +28,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${inter.variable} ${rethinkSans.variable} ${inter.className} antialiased selection:bg-[#30b996]/30 selection:text-[#022943] dark:selection:bg-[#30b996]/30 dark:selection:text-white font-sans min-h-screen transition-colors duration-300`}
+        className={`${sourceSans.variable} ${plusJakarta.variable} ${sourceSans.className} antialiased selection:bg-[#30b996]/30 selection:text-[#022943] dark:selection:bg-[#30b996]/30 dark:selection:text-white font-sans min-h-screen transition-colors duration-300`}
       >
         <Providers>{children}</Providers>
       </body>

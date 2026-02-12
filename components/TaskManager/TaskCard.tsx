@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Task } from '@/lib/types';
 import { formatDate, getStatusColor, getPriorityColor, cn } from '@/lib/utils';
-import { Calendar, User, AlertCircle, Edit2, Trash2, ChevronRight } from 'lucide-react';
+import { Calendar, User, AlertCircle, Edit2, Trash2, Copy, CheckCircle2 } from 'lucide-react';
 import { Button } from '../UI/Button';
 import { ConfirmModal } from '../UI/ConfirmModal';
 
@@ -13,6 +13,7 @@ interface TaskCardProps {
   onSelect: (task: Task) => void;
   onEdit: (task: Task) => void;
   onDelete: (taskId: string) => void;
+  onDuplicate?: (taskId: string) => void;
   isSelected?: boolean;
   /** When true, hide Edit/Delete (viewer role). */
   readOnly?: boolean;
@@ -24,6 +25,7 @@ export function TaskCard({
   onSelect,
   onEdit,
   onDelete,
+  onDuplicate,
   isSelected = false,
   readOnly = false,
 }: TaskCardProps) {
@@ -89,25 +91,32 @@ export function TaskCard({
         </div>
         {!readOnly && (
           <div className="flex gap-1 ml-2 flex-shrink-0">
+            {onDuplicate && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => { e.stopPropagation(); onDuplicate(task.id); }}
+                className="h-9 w-9 p-0 hover:bg-slate-100 dark:hover:bg-slate-700/50"
+                title="Duplicate task"
+              >
+                <Copy className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit(task);
-              }}
+              onClick={(e) => { e.stopPropagation(); onEdit(task); }}
               className="h-9 w-9 p-0 hover:bg-blue-100 dark:hover:bg-blue-900/30"
+              title="Edit task"
             >
               <Edit2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
             </Button>
             <Button
               variant="ghost"
               size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowDeleteConfirm(true);
-              }}
+              onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(true); }}
               className="h-9 w-9 p-0 hover:bg-red-100 dark:hover:bg-red-900/30"
+              title="Delete task"
             >
               <Trash2 className="w-4 h-4 text-red-600 dark:text-red-400" />
             </Button>
@@ -118,12 +127,13 @@ export function TaskCard({
       <div className="flex flex-wrap items-center gap-2 mb-3">
         <span
           className={cn(
-            'px-3 py-1 text-xs font-semibold rounded-full shadow-sm',
+            'inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full shadow-sm',
             'backdrop-blur-sm border',
             getStatusColor(task.status),
             'border-gray-200/50 dark:border-gray-700/50'
           )}
         >
+          {task.status === 'completed' && <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" aria-hidden />}
           {task.status.replace('-', ' ')}
         </span>
         <span

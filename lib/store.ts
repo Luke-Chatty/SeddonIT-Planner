@@ -17,6 +17,7 @@ interface PlanStore {
   addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'order'> & { order?: number }) => void;
   updateTask: (id: string, updates: Partial<Task>) => void;
   deleteTask: (id: string) => void;
+  duplicateTask: (taskId: string) => void;
   reorderTasks: (taskIds: string[]) => void;
   addMilestone: (milestone: Omit<Milestone, 'id'>) => void;
   updateMilestone: (id: string, updates: Partial<Milestone>) => void;
@@ -170,6 +171,30 @@ export const usePlanStore = create<PlanStore>((set, get) => ({
     };
 
     set({ plan: updatedPlan, selectedTaskId: get().selectedTaskId === id ? null : get().selectedTaskId });
+    get().savePlan();
+  },
+
+  duplicateTask: (taskId) => {
+    const { plan } = get();
+    if (!plan) return;
+    const source = plan.tasks.find((t) => t.id === taskId);
+    if (!source) return;
+    const maxOrder = plan.tasks.length > 0 ? Math.max(...plan.tasks.map((t) => t.order ?? 0)) : 0;
+    const newTask: Task = {
+      ...source,
+      id: generateTaskId(),
+      title: `${source.title} (copy)`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      order: maxOrder + 1,
+      dependencies: [],
+    };
+    const updatedPlan = {
+      ...plan,
+      tasks: [...plan.tasks, newTask],
+      updatedAt: new Date().toISOString(),
+    };
+    set({ plan: updatedPlan });
     get().savePlan();
   },
 

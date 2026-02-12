@@ -6,7 +6,7 @@ import { Task as AppTask } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import { format, differenceInDays, addDays, startOfWeek, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
 import { Button } from '../UI/Button';
-import { Layers, ZoomIn, ZoomOut, Check, Plus, Bell, Search, Settings, Calendar as CalendarIcon, Filter, Users, MoreHorizontal, Share2, ChevronRight, ChevronDown } from 'lucide-react';
+import { Layers, ZoomIn, ZoomOut, Check, CheckCircle2, Plus, Bell, Search, Settings, Calendar as CalendarIcon, Filter, Users, MoreHorizontal, Share2, ChevronRight, ChevronDown } from 'lucide-react';
 
 type ViewMode = 'Day' | 'Week' | 'Month';
 
@@ -45,7 +45,14 @@ export function GanttChart() {
 
   useEffect(() => {
     if (plan?.tasks) {
-      const validTasks = plan.tasks.filter(t => !isNaN(new Date(t.startDate).getTime()) && !isNaN(new Date(t.endDate).getTime()));
+      const validTasks = plan.tasks
+        .filter(t => !isNaN(new Date(t.startDate).getTime()) && !isNaN(new Date(t.endDate).getTime()))
+        .sort((a, b) => {
+          const startA = new Date(a.startDate).getTime();
+          const startB = new Date(b.startDate).getTime();
+          if (startA !== startB) return startA - startB;
+          return new Date(a.endDate).getTime() - new Date(b.endDate).getTime();
+        });
       setTasks(validTasks);
 
       if (validTasks.length > 0) {
@@ -350,8 +357,11 @@ export function GanttChart() {
               <div
                 key={task.id}
                 onDoubleClick={(e) => handleTaskDoubleClick(e, task.id)}
-                className="flex h-12 items-center px-6 border-b border-gray-50 dark:border-gray-800/50 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 cursor-pointer transition-colors group"
+                className="flex h-12 items-center px-6 border-b border-gray-50 dark:border-gray-800/50 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 cursor-pointer transition-colors group gap-2"
               >
+                {task.status === 'completed' && (
+                  <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-green-600 dark:text-green-400" aria-hidden />
+                )}
                 <span className="text-sm font-medium truncate text-gray-700 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400">{task.title}</span>
                 {task.assignedTo && (
                   <div className="ml-auto flex -space-x-2">
@@ -498,6 +508,7 @@ export function GanttChart() {
                       style={{ left: `${left}px`, width: `${width}px` }}
                       onMouseDown={(e) => handleDragStart(e, task)}
                       onDoubleClick={(e) => handleTaskDoubleClick(e, task.id)}
+                      title={`${task.title} • ${format(new Date(task.startDate), 'd MMM yyyy')} – ${format(new Date(task.endDate), 'd MMM yyyy')}${task.assignedTo ? ` • ${task.assignedTo}` : ''} • ${task.status}`}
                     >
                       {/* Resize Handle Left */}
                       <div

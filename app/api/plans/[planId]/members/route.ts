@@ -2,11 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth-server';
 import { prisma } from '@/lib/prisma';
 import { getPlanAccess, getOwnerIdFromSession } from '@/lib/plan-access';
+import { hasDatabase } from '@/lib/db';
 import { PlanRole } from '@prisma/client';
-
-function hasDatabase(): boolean {
-  return Boolean(process.env.DATABASE_URL);
-}
 
 /** GET: list members of the plan (Owner only or members can view) */
 export async function GET(

@@ -125,12 +125,8 @@ export default function PlansPage() {
 
     try {
       const importedPlan = await importPlanFromFile(file);
-      // Ensure plan has an ID
-      const planWithId: InfrastructurePlan = {
-        ...importedPlan,
-        id: importedPlan.id || `plan-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      };
-      addPlan(planWithId);
+      await addPlan(importedPlan);
+      e.target.value = '';
       setIsImportModalOpen(false);
       toast.success('Plan imported successfully');
     } catch (error) {
