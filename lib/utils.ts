@@ -1,5 +1,6 @@
 import { format, parseISO, isValid, differenceInDays } from 'date-fns';
 import { Task, TaskStatus, TaskPriority } from './types';
+import { getTaskNumberById } from './taskHierarchy';
 
 export function formatDate(date: string | Date): string {
   const dateObj = typeof date === 'string' ? parseISO(date) : date;
@@ -51,40 +52,10 @@ export function getPriorityColor(priority: TaskPriority): string {
 }
 
 /**
- * Generate hierarchical task number (e.g., 1.0, 1.1, 1.2, 2.0)
- * For now, we'll use simple sequential numbering based on order
- * Future enhancement: support parentId for true hierarchical structure
+ * Generate hierarchical task number (e.g., 1, 1.1, 1.2, 2)
  */
 export function getTaskNumber(task: Task, allTasks: Task[]): string {
-  // Sort tasks by order
-  const sortedTasks = [...allTasks].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-  
-  // Find the index of the current task
-  const index = sortedTasks.findIndex(t => t.id === task.id);
-  
-  if (index === -1) return '';
-  
-  // For now, use simple sequential numbering: 1.0, 2.0, 3.0, etc.
-  // If parentId is set, we could implement true hierarchical numbering
-  if (!task.parentId) {
-    return `${index + 1}.0`;
-  }
-  
-  // This is a child task - find its parent and siblings
-  const parent = sortedTasks.find(t => t.id === task.parentId);
-  if (!parent) return `${index + 1}.0`;
-  
-  // Sort siblings by order
-  const siblings = sortedTasks
-    .filter(t => t.parentId === task.parentId)
-    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-  const siblingIndex = siblings.findIndex(t => t.id === task.id);
-  
-  // Find parent's number
-  const parentNumber = getTaskNumber(parent, allTasks);
-  const parentMainNumber = parentNumber.split('.')[0];
-  
-  return `${parentMainNumber}.${siblingIndex + 1}`;
+  return getTaskNumberById(task.id, allTasks);
 }
 
 export function cn(...classes: (string | undefined | null | false)[]): string {

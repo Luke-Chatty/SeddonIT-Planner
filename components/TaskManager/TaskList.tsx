@@ -8,8 +8,10 @@ import { Filter, Search } from 'lucide-react';
 import { Select } from '../UI/Select';
 import { getTaskNumber } from '@/lib/utils';
 import { toast } from 'sonner';
+import { flattenTaskHierarchy, getTaskAndAncestorIds } from '@/lib/taskHierarchy';
 
 const FILTER_STORAGE_KEY = 'seddon-planner-task-filters';
+const COLLAPSE_STORAGE_KEY = 'seddon-planner-task-collapsed';
 
 interface TaskListProps {
   onEditTask?: (task: Task) => void;
@@ -24,6 +26,7 @@ export function TaskList({ onEditTask, planId }: TaskListProps) {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [collapsedTaskIds, setCollapsedTaskIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !storageKey) return;
@@ -39,6 +42,17 @@ export function TaskList({ onEditTask, planId }: TaskListProps) {
   }, [storageKey]);
 
   useEffect(() => {
+    if (typeof window === 'undefined' || !planId) return;
+    try {
+      const raw = sessionStorage.getItem(`${COLLAPSE_STORAGE_KEY}-${planId}`);
+      if (raw) {
+        const parsed = JSON.parse(raw) as { ids?: string[] };
+        if (Array.isArray(parsed.ids)) setCollapsedTaskIds(parsed.ids.filter((id) => typeof id === 'string'));
+      }
+    } catch {}
+  }, [planId]);
+
+  useEffect(() => {
     if (typeof window === 'undefined' || !storageKey) return;
     try {
       sessionStorage.setItem(storageKey, JSON.stringify({
@@ -48,6 +62,22 @@ export function TaskList({ onEditTask, planId }: TaskListProps) {
       }));
     } catch {}
   }, [storageKey, statusFilter, priorityFilter, searchQuery]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !planId) return;
+    try {
+      sessionStorage.setItem(
+        `${COLLAPSE_STORAGE_KEY}-${planId}`,
+        JSON.stringify({ ids: collapsedTaskIds })
+      );
+    } catch {}
+  }, [planId, collapsedTaskIds]);
+
+  useEffect(() => {
+    if (!plan) return;
+    const taskIdSet = new Set(plan.tasks.map((task) => task.id));
+    setCollapsedTaskIds((prev) => prev.filter((id) => taskIdSet.has(id)));
+  }, [plan]);
 
   const handleEdit = (task: Task) => {
     if (onEditTask) {
@@ -74,8 +104,23 @@ export function TaskList({ onEditTask, planId }: TaskListProps) {
     return true;
   });
 
-  // Sort by order
-  const sortedTasks = [...filteredTasks].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  const includeTaskIds = getTaskAndAncestorIds(
+    plan.tasks,
+    new Set(filteredTasks.map((task) => task.id))
+  );
+
+  const collapsedSet = new Set(collapsedTaskIds);
+  const hierarchyRows = flattenTaskHierarchy(plan.tasks, {
+    collapsedTaskIds: collapsedSet,
+    includeTaskIds: includeTaskIds.size > 0 ? includeTaskIds : undefined,
+    ignoreCollapse: searchLower.length > 0 || statusFilter !== 'all' || priorityFilter !== 'all',
+  });
+
+  const toggleCollapse = (taskId: string) => {
+    setCollapsedTaskIds((prev) =>
+      prev.includes(taskId) ? prev.filter((id) => id !== taskId) : [...prev, taskId]
+    );
+  };
 
   return (
     <div className="h-full flex flex-col">
@@ -137,17 +182,22 @@ export function TaskList({ onEditTask, planId }: TaskListProps) {
             </p>
           </div>
         ) : (
-          sortedTasks.map((task) => (
+          hierarchyRows.map((row) => (
             <TaskCard
-              key={task.id}
-              task={task}
-              taskNumber={getTaskNumber(task, plan.tasks)}
+              key={row.task.id}
+              task={row.task}
+              taskNumber={getTaskNumber(row.task, plan.tasks)}
               onSelect={(task) => setSelectedTask(task.id)}
               onEdit={handleEdit}
               onDelete={deleteTask}
               onDuplicate={readOnly ? undefined : handleDuplicate}
-              isSelected={task.id === selectedTaskId}
+              isSelected={row.task.id === selectedTaskId}
               readOnly={readOnly}
+              depth={row.depth}
+              hasChildren={row.hasChildren}
+              isCollapsed={row.isCollapsed}
+              onToggleCollapse={() => toggleCollapse(row.task.id)}
+              rollup={row.rollup}
             />
           ))
         )}

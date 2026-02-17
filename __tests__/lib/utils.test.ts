@@ -31,8 +31,20 @@ describe('getTaskNumber', () => {
       { id: 'a', title: 'A', startDate: '', endDate: '', status: 'not-started', priority: 'medium', order: 1 } as Task,
       { id: 'b', title: 'B', startDate: '', endDate: '', status: 'not-started', priority: 'medium', order: 2 } as Task,
     ];
-    expect(getTaskNumber(tasks[0], tasks)).toBe('1.0');
-    expect(getTaskNumber(tasks[1], tasks)).toBe('2.0');
+    expect(getTaskNumber(tasks[0], tasks)).toBe('1');
+    expect(getTaskNumber(tasks[1], tasks)).toBe('2');
+  });
+  test('returns hierarchical numbers for child tasks', () => {
+    const tasks: Task[] = [
+      { id: 'a', title: 'Parent A', startDate: '', endDate: '', status: 'not-started', priority: 'medium', order: 1 } as Task,
+      { id: 'b', title: 'Child A1', startDate: '', endDate: '', status: 'not-started', priority: 'medium', order: 2, parentId: 'a' } as Task,
+      { id: 'c', title: 'Child A2', startDate: '', endDate: '', status: 'not-started', priority: 'medium', order: 3, parentId: 'a' } as Task,
+      { id: 'd', title: 'Parent B', startDate: '', endDate: '', status: 'not-started', priority: 'medium', order: 4 } as Task,
+    ];
+    expect(getTaskNumber(tasks[0], tasks)).toBe('1');
+    expect(getTaskNumber(tasks[1], tasks)).toBe('1.1');
+    expect(getTaskNumber(tasks[2], tasks)).toBe('1.2');
+    expect(getTaskNumber(tasks[3], tasks)).toBe('2');
   });
   test('returns empty string when task not in list', () => {
     const tasks: Task[] = [

@@ -31,31 +31,43 @@ import { getTaskNumber } from '@/lib/utils';
 import { AppHeader } from '@/components/AppHeader';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { toast } from 'sonner';
+import { flattenTaskHierarchy, getTaskAndAncestorIds } from '@/lib/taskHierarchy';
 
 const FILTER_STORAGE_KEY = 'seddon-planner-task-filters';
+const COLLAPSE_STORAGE_KEY = 'seddon-planner-task-collapsed';
 
 interface SortableTaskCardProps {
   task: Task;
   taskNumber: string;
-  allTasks: Task[];
   onSelect: (task: Task) => void;
   onEdit: (task: Task) => void;
   onDelete: (taskId: string) => void;
   onDuplicate?: (taskId: string) => void;
   isSelected: boolean;
   readOnly?: boolean;
+  disableDrag?: boolean;
+  depth?: number;
+  hasChildren?: boolean;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
+  rollup?: { totalDescendants: number; completedDescendants: number; percentComplete: number };
 }
 
 function SortableTaskCard({
   task,
   taskNumber,
-  allTasks,
   onSelect,
   onEdit,
   onDelete,
   onDuplicate,
   isSelected,
   readOnly = false,
+  disableDrag = false,
+  depth = 0,
+  hasChildren = false,
+  isCollapsed = false,
+  onToggleCollapse,
+  rollup,
 }: SortableTaskCardProps) {
   const {
     attributes,
@@ -64,7 +76,7 @@ function SortableTaskCard({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: task.id, disabled: readOnly });
+  } = useSortable({ id: task.id, disabled: disableDrag });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -74,12 +86,12 @@ function SortableTaskCard({
 
   return (
     <div ref={setNodeRef} style={style} className="relative">
-      {!readOnly && (
+      {!disableDrag && (
         <div className="absolute left-2 top-1/2 -translate-y-1/2 z-10 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300">
           <GripVertical className="w-5 h-5" {...attributes} {...listeners} />
         </div>
       )}
-      <div className={readOnly ? '' : 'ml-8'}>
+      <div className={disableDrag ? '' : 'ml-8'}>
         <TaskCard
           task={task}
           taskNumber={taskNumber}
@@ -89,6 +101,11 @@ function SortableTaskCard({
           onDuplicate={onDuplicate}
           isSelected={isSelected}
           readOnly={readOnly}
+          depth={depth}
+          hasChildren={hasChildren}
+          isCollapsed={isCollapsed}
+          onToggleCollapse={onToggleCollapse}
+          rollup={rollup}
         />
       </div>
     </div>
@@ -107,6 +124,7 @@ export default function PlanTasksPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [collapsedTaskIds, setCollapsedTaskIds] = useState<string[]>([]);
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
 
@@ -124,6 +142,17 @@ export default function PlanTasksPage() {
   }, [storageKey]);
 
   useEffect(() => {
+    if (typeof window === 'undefined' || !planId) return;
+    try {
+      const raw = sessionStorage.getItem(`${COLLAPSE_STORAGE_KEY}-${planId}`);
+      if (raw) {
+        const parsed = JSON.parse(raw) as { ids?: string[] };
+        if (Array.isArray(parsed.ids)) setCollapsedTaskIds(parsed.ids.filter((id) => typeof id === 'string'));
+      }
+    } catch {}
+  }, [planId]);
+
+  useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
       sessionStorage.setItem(storageKey, JSON.stringify({
@@ -133,6 +162,22 @@ export default function PlanTasksPage() {
       }));
     } catch {}
   }, [storageKey, statusFilter, priorityFilter, searchQuery]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !planId) return;
+    try {
+      sessionStorage.setItem(
+        `${COLLAPSE_STORAGE_KEY}-${planId}`,
+        JSON.stringify({ ids: collapsedTaskIds })
+      );
+    } catch {}
+  }, [planId, collapsedTaskIds]);
+
+  useEffect(() => {
+    if (!plan) return;
+    const taskIdSet = new Set(plan.tasks.map((task) => task.id));
+    setCollapsedTaskIds((prev) => prev.filter((id) => taskIdSet.has(id)));
+  }, [plan]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -215,20 +260,48 @@ export default function PlanTasksPage() {
     return true;
   });
 
-  // Sort by order (full list for reorder; filtered for display)
-  const fullSortedTasks = [...plan.tasks].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-  const sortedTasks = [...filteredTasks].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  const includeTaskIds = getTaskAndAncestorIds(
+    plan.tasks,
+    new Set(filteredTasks.map((task) => task.id))
+  );
+  const hierarchyRows = flattenTaskHierarchy(plan.tasks, {
+    collapsedTaskIds: new Set(collapsedTaskIds),
+    includeTaskIds: includeTaskIds.size > 0 ? includeTaskIds : undefined,
+    ignoreCollapse: searchLower.length > 0 || statusFilter !== 'all' || priorityFilter !== 'all',
+  });
+
+  const canReorder =
+    canEdit &&
+    statusFilter === 'all' &&
+    priorityFilter === 'all' &&
+    searchLower.length === 0 &&
+    collapsedTaskIds.length === 0;
+
+  const reorderDisabledReason = !canEdit
+    ? 'You do not have edit permissions.'
+    : searchLower.length > 0 || statusFilter !== 'all' || priorityFilter !== 'all'
+      ? 'Clear search and filters to reorder tasks.'
+      : collapsedTaskIds.length > 0
+        ? 'Expand all parent tasks to reorder tasks.'
+        : null;
+
+  const toggleCollapse = (taskId: string) => {
+    setCollapsedTaskIds((prev) =>
+      prev.includes(taskId) ? prev.filter((id) => id !== taskId) : [...prev, taskId]
+    );
+  };
 
   const handleDragEnd = (event: DragEndEvent) => {
-    if (!canEdit) return;
+    if (!canReorder) return;
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
-    const oldIndexInFull = fullSortedTasks.findIndex((t) => t.id === active.id);
-    const newIndexInFull = fullSortedTasks.findIndex((t) => t.id === over.id);
-    if (oldIndexInFull === -1 || newIndexInFull === -1) return;
+    const orderedVisibleTasks = hierarchyRows.map((row) => row.task);
+    const oldIndex = orderedVisibleTasks.findIndex((t) => t.id === active.id);
+    const newIndex = orderedVisibleTasks.findIndex((t) => t.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
 
-    const newOrder = arrayMove(fullSortedTasks, oldIndexInFull, newIndexInFull);
+    const newOrder = arrayMove(orderedVisibleTasks, oldIndex, newIndex);
     const taskIds = newOrder.map((t) => t.id);
     reorderTasks(taskIds);
     toast.success('Task order saved. Order is used in the list and task numbers; Gantt shows by date.');
@@ -310,11 +383,11 @@ export default function PlanTasksPage() {
             className="w-40"
           />
           <span className="text-sm text-slate-500 dark:text-slate-400">
-            {sortedTasks.length} of {plan.tasks.length} tasks
+            {filteredTasks.length} of {plan.tasks.length} tasks
           </span>
-          {canEdit && (statusFilter !== 'all' || priorityFilter !== 'all') && (
+          {canEdit && reorderDisabledReason && (
             <span className="text-xs text-slate-500 dark:text-slate-400">
-              Order is saved for the full list; clear filters to see final order.
+              {reorderDisabledReason}
             </span>
           )}
         </div>
@@ -326,11 +399,11 @@ export default function PlanTasksPage() {
           onDragEnd={handleDragEnd}
         >
           <SortableContext
-            items={sortedTasks.map((t) => t.id)}
+            items={hierarchyRows.map((row) => row.task.id)}
             strategy={verticalListSortingStrategy}
           >
             <div className="space-y-3">
-              {sortedTasks.length === 0 ? (
+              {filteredTasks.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 text-center rounded-[20px] border border-slate-200 dark:border-white/10 bg-white dark:bg-[#022943] shadow-[0_20px_50px_rgba(0,0,0,0.08)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.2)]">
                   <div className="w-20 h-20 rounded-full bg-[#022943]/10 dark:bg-[#4ebec7]/20 flex items-center justify-center mb-4">
                     <Filter className="w-10 h-10 text-[#022943] dark:text-[#4ebec7]" />
@@ -345,12 +418,11 @@ export default function PlanTasksPage() {
                   </p>
                 </div>
               ) : (
-                sortedTasks.map((task) => (
+                hierarchyRows.map((row) => (
                   <SortableTaskCard
-                    key={task.id}
-                    task={task}
-                    taskNumber={getTaskNumber(task, plan.tasks)}
-                    allTasks={plan.tasks}
+                    key={row.task.id}
+                    task={row.task}
+                    taskNumber={getTaskNumber(row.task, plan.tasks)}
                     onSelect={(task) => {
                       setSelectedTask(task.id);
                       router.push(`/plans/${planId}/tasks/${task.id}`);
@@ -360,8 +432,14 @@ export default function PlanTasksPage() {
                     }}
                     onDelete={deleteTask}
                     onDuplicate={canEdit ? (id) => { duplicateTask(id); toast.success('Task duplicated'); } : undefined}
-                    isSelected={task.id === selectedTaskId}
+                    isSelected={row.task.id === selectedTaskId}
                     readOnly={!canEdit}
+                    disableDrag={!canReorder}
+                    depth={row.depth}
+                    hasChildren={row.hasChildren}
+                    isCollapsed={row.isCollapsed}
+                    onToggleCollapse={() => toggleCollapse(row.task.id)}
+                    rollup={row.rollup}
                   />
                 ))
               )}

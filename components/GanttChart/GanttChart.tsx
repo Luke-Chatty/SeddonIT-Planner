@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { format, differenceInDays, addDays, startOfWeek, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
 import { Button } from '../UI/Button';
 import { Layers, ZoomIn, ZoomOut, Check, CheckCircle2, Plus, Bell, Search, Settings, Calendar as CalendarIcon, Filter, Users, MoreHorizontal, Share2, ChevronRight, ChevronDown } from 'lucide-react';
+import { flattenTaskHierarchy } from '@/lib/taskHierarchy';
 
 type ViewMode = 'Day' | 'Week' | 'Month';
 
@@ -14,6 +15,7 @@ export function GanttChart() {
   const { plan, updateTask } = usePlanStore();
   const router = useRouter();
   const [tasks, setTasks] = useState<AppTask[]>([]);
+  const [collapsedTaskIds, setCollapsedTaskIds] = useState<string[]>([]);
 
   // View State
   const [viewMode, setViewMode] = useState<ViewMode>('Day');
@@ -48,10 +50,9 @@ export function GanttChart() {
       const validTasks = plan.tasks
         .filter(t => !isNaN(new Date(t.startDate).getTime()) && !isNaN(new Date(t.endDate).getTime()))
         .sort((a, b) => {
-          const startA = new Date(a.startDate).getTime();
-          const startB = new Date(b.startDate).getTime();
-          if (startA !== startB) return startA - startB;
-          return new Date(a.endDate).getTime() - new Date(b.endDate).getTime();
+          const byOrder = (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER);
+          if (byOrder !== 0) return byOrder;
+          return a.createdAt.localeCompare(b.createdAt);
         });
       setTasks(validTasks);
 
@@ -63,6 +64,11 @@ export function GanttChart() {
       }
     }
   }, [plan]);
+
+  useEffect(() => {
+    const taskIds = new Set(tasks.map((task) => task.id));
+    setCollapsedTaskIds((prev) => prev.filter((id) => taskIds.has(id)));
+  }, [tasks]);
 
   // --- Date Math ---
   const getDatePos = (dateStr: string) => {
@@ -289,6 +295,16 @@ export function GanttChart() {
   };
 
   const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+  const hierarchyRows = flattenTaskHierarchy(tasks, {
+    collapsedTaskIds: new Set(collapsedTaskIds),
+  });
+  const rowIndexByTaskId = new Map(hierarchyRows.map((row, index) => [row.task.id, index]));
+  const timelineWidth = Math.max(2000, (viewMode === 'Month' ? 365 : viewDays) * COLUMN_WIDTH);
+  const toggleCollapse = (taskId: string) => {
+    setCollapsedTaskIds((prev) =>
+      prev.includes(taskId) ? prev.filter((id) => id !== taskId) : [...prev, taskId]
+    );
+  };
 
   if (!plan) return null;
 
@@ -353,20 +369,40 @@ export function GanttChart() {
             <span className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Task Name</span>
           </div>
           <div className="flex-1 overflow-y-auto no-scrollbar">
-            {tasks.map(task => (
+            {hierarchyRows.map((row) => (
               <div
-                key={task.id}
-                onDoubleClick={(e) => handleTaskDoubleClick(e, task.id)}
+                key={row.task.id}
+                onDoubleClick={(e) => handleTaskDoubleClick(e, row.task.id)}
                 className="flex h-12 items-center px-6 border-b border-gray-50 dark:border-gray-800/50 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 cursor-pointer transition-colors group gap-2"
+                style={{ paddingLeft: `${24 + Math.max(0, row.depth) * 18}px` }}
               >
-                {task.status === 'completed' && (
+                {row.hasChildren && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      toggleCollapse(row.task.id);
+                    }}
+                    className="h-5 w-5 rounded border border-gray-200 dark:border-gray-700 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-800"
+                    aria-label={row.isCollapsed ? 'Expand child tasks' : 'Collapse child tasks'}
+                  >
+                    {row.isCollapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                  </button>
+                )}
+                {row.task.status === 'completed' && (
                   <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-green-600 dark:text-green-400" aria-hidden />
                 )}
-                <span className="text-sm font-medium truncate text-gray-700 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400">{task.title}</span>
-                {task.assignedTo && (
+                <span className="text-sm font-medium truncate text-gray-700 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400">{row.task.title}</span>
+                {row.hasChildren && row.rollup.totalDescendants > 0 && (
+                  <span className="ml-auto text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300">
+                    {row.rollup.percentComplete}%
+                  </span>
+                )}
+                {row.task.assignedTo && (
                   <div className="ml-auto flex -space-x-2">
                     <div className="h-6 w-6 rounded-full bg-gray-100 border-2 border-white dark:border-gray-900 flex items-center justify-center text-[9px] font-bold text-gray-500">
-                      {getInitials(task.assignedTo)}
+                      {getInitials(row.task.assignedTo)}
                     </div>
                   </div>
                 )}
@@ -377,7 +413,7 @@ export function GanttChart() {
 
         {/* Timeline Chart */}
         <div className="flex-1 overflow-auto bg-white dark:bg-slate-900 relative">
-          <div className="min-w-fit inline-block relative pr-32" style={{ width: Math.max(2000, (viewMode === 'Month' ? 365 : viewDays) * COLUMN_WIDTH) }}>
+          <div className="min-w-fit inline-block relative pr-32" style={{ width: timelineWidth }}>
             {/* Calendar Header sticky */}
             <div className="sticky top-0 z-30 flex flex-col bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-gray-800 w-full min-w-max">
               {renderCalendarHeader()}
@@ -413,16 +449,41 @@ export function GanttChart() {
               return null;
             })()}
 
+            {/* Milestones Layer */}
+            {(plan.milestones ?? []).map((milestone) => {
+              const x = getDatePos(milestone.date) + COLUMN_WIDTH / 2;
+              if (x < -12 || x > timelineWidth + 12) return null;
+              const showLabel = viewMode !== 'Month';
+
+              return (
+                <div
+                  key={milestone.id}
+                  className="absolute top-16 bottom-0 z-20 pointer-events-none"
+                  style={{ left: x }}
+                  title={`${milestone.title} • ${format(new Date(milestone.date), 'd MMM yyyy')}`}
+                >
+                  <div className="absolute top-1 -left-[5px] h-[10px] w-[10px] rotate-45 bg-amber-500 ring-2 ring-white dark:ring-slate-900" />
+                  <div className="absolute top-4 bottom-0 w-px bg-amber-500/50 border-dashed border-l border-amber-500/60" />
+                  {showLabel && (
+                    <span className="absolute top-0 left-2 whitespace-nowrap rounded bg-amber-100/90 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200 px-1.5 py-0.5 text-[10px] font-semibold">
+                      {milestone.title}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+
             {/* Dependency Arrows Layer */}
             <svg className="absolute inset-0 z-0 pointer-events-none w-full h-full text-brand-grey/80 dark:text-brand-grey/60 top-16">
-              {tasks.map((task, index) => {
+              {hierarchyRows.map((row, index) => {
+                const task = row.task;
                 if (!task.dependencies || task.dependencies.length === 0) return null;
 
                 // Find parent tasks and draw lines
                 return task.dependencies.map(depId => {
-                  const parentIdx = tasks.findIndex(t => t.id === depId);
-                  if (parentIdx === -1) return null;
-                  const parentTask = tasks[parentIdx];
+                  const parentIdx = rowIndexByTaskId.get(depId);
+                  if (parentIdx === undefined) return null;
+                  const parentTask = hierarchyRows[parentIdx].task;
 
                   // Coordinates
                   // Parent (Source): Right Edge, Vertical Center
@@ -485,13 +546,15 @@ export function GanttChart() {
 
             {/* Task Bars Area */}
             <div className="flex flex-col pt-0 relative z-10">
-              {tasks.map(task => {
+              {hierarchyRows.map((row) => {
+                const task = row.task;
                 const left = getDatePos(task.startDate);
                 const width = getDurationWidth(task.startDate, task.endDate);
                 const styles = getTaskStyles(task);
 
                 let progressPct = 0;
-                if (task.status === 'completed') progressPct = 100;
+                if (row.hasChildren && row.rollup.totalDescendants > 0) progressPct = row.rollup.percentComplete;
+                else if (task.status === 'completed') progressPct = 100;
                 else if (task.status === 'in-progress') progressPct = 45;
 
                 const isMoving = isDragging && dragTaskId === task.id;

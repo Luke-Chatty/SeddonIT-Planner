@@ -23,6 +23,7 @@ import {
   List,
   ChevronLeft,
   ChevronRight,
+  Calendar,
 } from 'lucide-react';
 import { Share2, Plus } from 'lucide-react';
 import { toast } from 'sonner';
@@ -31,6 +32,7 @@ import { SharePlanModal } from '@/components/SharePlanModal';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { exportPlanToFile, importPlanFromFile, exportGanttAsImage, exportGanttAsPDF } from '@/lib/storage';
 import { Task } from '@/lib/types';
+import { MilestoneManagerModal } from '@/components/Milestones/MilestoneManagerModal';
 
 
 type PanelView = 'viewer' | 'editor' | 'details';
@@ -54,6 +56,7 @@ export default function PlanDetailPage() {
   const [rightSidebarOpen, setRightSidebarOpen] = useState(true);
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [isMilestoneModalOpen, setIsMilestoneModalOpen] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && planId) {
@@ -212,6 +215,17 @@ export default function PlanDetailPage() {
           onExport={() => setIsExportMenuOpen(!isExportMenuOpen)}
           onImport={() => setIsImportModalOpen(true)}
         />
+        {canEdit && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsMilestoneModalOpen(true)}
+            className="hidden sm:flex"
+          >
+            <Calendar className="w-4 h-4 mr-2" />
+            Milestones
+          </Button>
+        )}
         <Button
           variant="outline"
           size="sm"
@@ -261,6 +275,11 @@ export default function PlanDetailPage() {
         planId={shareModalOpen ? planId : null}
         onClose={() => setShareModalOpen(false)}
       />
+      <MilestoneManagerModal
+        isOpen={isMilestoneModalOpen}
+        onClose={() => setIsMilestoneModalOpen(false)}
+        canEdit={canEdit}
+      />
 
       {/* Breadcrumbs - only when plan loaded */}
       {plan && (
@@ -280,17 +299,30 @@ export default function PlanDetailPage() {
           <div className="flex-1 min-w-0">
             <PlanOverview />
           </div>
-          {canShare && (
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => setShareModalOpen(true)}
-              className="gap-2 shrink-0"
-            >
-              <Share2 className="w-4 h-4" />
-              Share plan
-            </Button>
-          )}
+          <div className="flex items-center gap-2 shrink-0">
+            {canEdit && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsMilestoneModalOpen(true)}
+                className="gap-2"
+              >
+                <Calendar className="w-4 h-4" />
+                Milestones
+              </Button>
+            )}
+            {canShare && (
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => setShareModalOpen(true)}
+                className="gap-2"
+              >
+                <Share2 className="w-4 h-4" />
+                Share plan
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 

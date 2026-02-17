@@ -10,8 +10,9 @@ import { RichTextEditor } from '../UI/RichTextEditor';
 import { usePlanStore } from '@/lib/store';
 import { searchDirectory, type DirectoryUser } from '@/lib/api';
 import { Calendar, CheckCircle2, AlertCircle, Clock, Save, X, User } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, getTaskNumber } from '@/lib/utils';
 import { addDays, parseISO, format, isValid } from 'date-fns';
+import { getDescendantIds } from '@/lib/taskHierarchy';
 
 interface TaskFormProps {
   task?: Task | null;
@@ -32,6 +33,7 @@ export function TaskForm({ task, onClose, onSave, readOnly = false }: TaskFormPr
     priority: 'medium' as Task['priority'],
     assignedTo: '',
     dependencies: [] as string[],
+    parentId: '',
     scopeOfWorks: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -52,6 +54,7 @@ export function TaskForm({ task, onClose, onSave, readOnly = false }: TaskFormPr
         priority: task.priority,
         assignedTo: task.assignedTo || '',
         dependencies: task.dependencies,
+        parentId: task.parentId || '',
         scopeOfWorks: task.scopeOfWorks || '',
       });
     } else if (plan) {
@@ -109,13 +112,14 @@ export function TaskForm({ task, onClose, onSave, readOnly = false }: TaskFormPr
       description: formData.description.trim(),
       startDate: new Date(formData.startDate).toISOString(),
       endDate: new Date(formData.endDate).toISOString(),
-      status: formData.status,
-      priority: formData.priority,
-      assignedTo: formData.assignedTo.trim() || undefined,
-      dependencies: formData.dependencies,
-      scopeOfWorks: formData.scopeOfWorks,
-      order,
-    };
+        status: formData.status,
+        priority: formData.priority,
+        assignedTo: formData.assignedTo.trim() || undefined,
+        dependencies: formData.dependencies,
+        parentId: formData.parentId.trim() || undefined,
+        scopeOfWorks: formData.scopeOfWorks,
+        order,
+      };
 
     if (task) {
       updateTask(task.id, taskData);
@@ -128,6 +132,20 @@ export function TaskForm({ task, onClose, onSave, readOnly = false }: TaskFormPr
   };
 
   const availableTasks = plan?.tasks.filter(t => t.id !== task?.id) || [];
+  const disallowedParentIds = new Set<string>();
+  if (task && plan) {
+    disallowedParentIds.add(task.id);
+    getDescendantIds(task.id, plan.tasks).forEach((id) => disallowedParentIds.add(id));
+  }
+  const parentOptions = [
+    { value: '', label: 'No parent (top-level task)' },
+    ...availableTasks
+      .filter((t) => !disallowedParentIds.has(t.id))
+      .map((t) => ({
+        value: t.id,
+        label: `${getTaskNumber(t, plan?.tasks ?? availableTasks)} ${t.title}`,
+      })),
+  ];
   const selectedDependencyTasks = availableTasks.filter((t) => formData.dependencies.includes(t.id));
 
   const runAssignSearch = useCallback((q: string) => {
@@ -281,6 +299,13 @@ export function TaskForm({ task, onClose, onSave, readOnly = false }: TaskFormPr
                   { value: 'high', label: 'High' },
                   { value: 'critical', label: 'Critical' },
                 ]}
+                disabled={readOnly}
+              />
+              <Select
+                label="Parent Task (WBS)"
+                value={formData.parentId}
+                onChange={(e) => setFormData({ ...formData, parentId: e.target.value })}
+                options={parentOptions}
                 disabled={readOnly}
               />
             </div>

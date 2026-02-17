@@ -3,9 +3,10 @@
 import { useState } from 'react';
 import { Task } from '@/lib/types';
 import { formatDate, getStatusColor, getPriorityColor, cn } from '@/lib/utils';
-import { Calendar, User, AlertCircle, Edit2, Trash2, Copy, CheckCircle2 } from 'lucide-react';
+import { Calendar, User, AlertCircle, Edit2, Trash2, Copy, CheckCircle2, ChevronRight, ChevronDown } from 'lucide-react';
 import { Button } from '../UI/Button';
 import { ConfirmModal } from '../UI/ConfirmModal';
+import type { TaskRollup } from '@/lib/taskHierarchy';
 
 interface TaskCardProps {
   task: Task;
@@ -17,6 +18,11 @@ interface TaskCardProps {
   isSelected?: boolean;
   /** When true, hide Edit/Delete (viewer role). */
   readOnly?: boolean;
+  depth?: number;
+  hasChildren?: boolean;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
+  rollup?: TaskRollup;
 }
 
 export function TaskCard({
@@ -28,6 +34,11 @@ export function TaskCard({
   onDuplicate,
   isSelected = false,
   readOnly = false,
+  depth = 0,
+  hasChildren = false,
+  isCollapsed = false,
+  onToggleCollapse,
+  rollup,
 }: TaskCardProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -55,6 +66,7 @@ export function TaskCard({
         'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
         isSelected && 'ring-2 ring-blue-500 border-blue-500 shadow-lg shadow-blue-500/20 scale-[1.02]'
       )}
+      style={{ marginLeft: `${Math.max(0, depth) * 14}px` }}
       onClick={() => onSelect(task)}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -74,6 +86,20 @@ export function TaskCard({
       <div className="flex items-start justify-between mb-2">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
+            {hasChildren && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleCollapse?.();
+                }}
+                className="h-6 w-6 rounded-md border border-gray-200 dark:border-gray-700 flex items-center justify-center hover:bg-white/80 dark:hover:bg-gray-800/80"
+                aria-label={isCollapsed ? 'Expand child tasks' : 'Collapse child tasks'}
+                title={isCollapsed ? 'Expand child tasks' : 'Collapse child tasks'}
+              >
+                {isCollapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+              </button>
+            )}
             {taskNumber && (
               <span className="text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded">
                 {taskNumber}
@@ -152,7 +178,23 @@ export function TaskCard({
             {task.dependencies.length} {task.dependencies.length === 1 ? 'dependency' : 'dependencies'}
           </span>
         )}
+        {hasChildren && rollup && rollup.totalDescendants > 0 && (
+          <span className="px-2.5 py-1 text-xs font-semibold rounded-full border border-indigo-200/60 dark:border-indigo-700/50 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300">
+            Roll-up {rollup.percentComplete}% ({rollup.completedDescendants}/{rollup.totalDescendants})
+          </span>
+        )}
       </div>
+
+      {hasChildren && rollup && rollup.totalDescendants > 0 && (
+        <div className="mb-3">
+          <div className="h-1.5 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+            <div
+              className="h-full rounded-full bg-indigo-500 dark:bg-indigo-400 transition-all"
+              style={{ width: `${rollup.percentComplete}%` }}
+            />
+          </div>
+        </div>
+      )}
 
       <div className="flex items-center justify-between pt-2 border-t border-gray-200/50 dark:border-gray-700/50">
         <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
